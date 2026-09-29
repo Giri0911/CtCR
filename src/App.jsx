@@ -1,7 +1,7 @@
 import "./App.css";
 
 import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
-import heroImage from "./assets/hero.png";
+import logo from "./assets/hero.png";
 
 import Login from "./pages/login.jsx";
 import Register from "./pages/registration";
@@ -58,7 +58,7 @@ function Home() {
         </div>
 
         <figure className="home-visual">
-          <img src={heroImage} alt="CampusConnect career opportunities" />
+          <img src={logo} alt="CampusConnect career opportunities" />
           <figcaption>
             <span>Local talent.</span> Real opportunity.
           </figcaption>
