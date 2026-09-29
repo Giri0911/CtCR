@@ -4,209 +4,53 @@ import reactLogo from './assets/react.svg'
 import viteLogo from './assets/vite.svg'
 import "./App.css";
 
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+
+import Login from "./pages/Login";
+import Register from "./pages/registration";
+import CollegeDashboard from "./pages/collegeDashboard";
+import CompanyDashboard from "./pages/companyDashboard";
+import AdminDashboard from "./pages/adminDashboard";
+
+function Home() {
+  return (
+    <div>
+      <h1>CampusConnect</h1>
+      <p>College–Company Recruitment & Internship Platform</p>
+    </div>
+  );
+}
+
 function App() {
   return (
-    <div className="app">
+    <BrowserRouter>
 
-      {/* Navbar */}
-      <nav className="navbar">
-        <div className="logo">Campus<span>Connect</span></div>
+      <Routes>
 
-        <div className="nav-links">
-          <a href="#">Home</a>
-          <a href="#">Companies</a>
-          <a href="#">Opportunities</a>
-          <a href="#">About</a>
-        </div>
+        <Route path="/" element={<Home />} />
 
-        <div className="nav-buttons">
-          <button className="login-btn">Login</button>
-          <button className="register-btn">Register</button>
-        </div>
-      </nav>
+        <Route path="/login" element={<Login />} />
 
-      {/* Hero Section */}
-      <section className="hero">
+        <Route path="/register" element={<Register />} />
 
-        <div className="hero-content">
-          <div className="tag">
-            College & Company Connection Platform
-          </div>
+        <Route
+          path="/college"
+          element={<CollegeDashboard />}
+        />
 
-          <h1>
-            Discover Companies.
-            <br />
-            <span>Find Opportunities.</span>
-          </h1>
+        <Route
+          path="/company"
+          element={<CompanyDashboard />}
+        />
 
-          <p>
-            CampusConnect helps colleges discover nearby companies,
-            current job vacancies, and genuine internship opportunities
-            through one centralized platform.
-          </p>
+        <Route
+          path="/admin"
+          element={<AdminDashboard />}
+        />
 
-          <div className="hero-buttons">
-            <button className="primary-btn">
-              Explore Companies →
-            </button>
+      </Routes>
 
-            <button className="secondary-btn">
-              Join CampusConnect
-            </button>
-          </div>
-
-          <div className="hero-info">
-            <div>
-              <strong>500+</strong>
-              <span>Companies</span>
-            </div>
-
-            <div>
-              <strong>1,200+</strong>
-              <span>Opportunities</span>
-            </div>
-
-            <div>
-              <strong>100+</strong>
-              <span>Colleges</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Dashboard Preview */}
-        <div className="dashboard-preview">
-
-          <div className="preview-header">
-            <div>
-              <small>College Dashboard</small>
-              <h3>Good Morning 👋</h3>
-            </div>
-
-            <div className="profile-circle">C</div>
-          </div>
-
-          <div className="stats">
-
-            <div className="stat-card">
-              <span>Nearby Companies</span>
-              <strong>48</strong>
-              <small>Within 25 km</small>
-            </div>
-
-            <div className="stat-card">
-              <span>Active Jobs</span>
-              <strong>126</strong>
-              <small>Currently hiring</small>
-            </div>
-
-            <div className="stat-card">
-              <span>Internships</span>
-              <strong>24</strong>
-              <small>✓ Verified</small>
-            </div>
-
-          </div>
-
-          <div className="opportunity-box">
-            <div className="opportunity-title">
-              <strong>Latest Opportunities</strong>
-              <span>View all</span>
-            </div>
-
-            <div className="opportunity">
-              <div className="company-icon">T</div>
-
-              <div>
-                <strong>Software Developer</strong>
-                <p>TechNova Technologies • 8 km</p>
-              </div>
-
-              <div className="status">Hiring</div>
-            </div>
-
-            <div className="opportunity">
-              <div className="company-icon orange">G</div>
-
-              <div>
-                <strong>Software Internship</strong>
-                <p>GreenGrid • 12 km</p>
-              </div>
-
-              <div className="verified">✓ Verified</div>
-            </div>
-
-          </div>
-
-        </div>
-
-      </section>
-
-      {/* Features */}
-      <section className="features">
-
-        <div className="section-heading">
-          <p>WHAT CAMPUSCONNECT OFFERS</p>
-          <h2>Everything colleges need to connect with industry</h2>
-        </div>
-
-        <div className="feature-grid">
-
-          <div className="feature-card">
-            <div className="feature-icon blue">⌖</div>
-            <h3>Discover Companies</h3>
-            <p>
-              Find companies operating around your college
-              based on location and industry.
-            </p>
-          </div>
-
-          <div className="feature-card">
-            <div className="feature-icon green">▣</div>
-            <h3>Current Job Vacancies</h3>
-            <p>
-              Know which companies are hiring and explore
-              their current recruitment requirements.
-            </p>
-          </div>
-
-          <div className="feature-card">
-            <div className="feature-icon orange">✓</div>
-            <h3>Genuine Internships</h3>
-            <p>
-              Discover internship opportunities from
-              verified companies with clear requirements.
-            </p>
-          </div>
-
-        </div>
-
-      </section>
-
-      {/* CTA */}
-      <section className="cta">
-        <h2>Build stronger college–industry connections.</h2>
-        <p>
-          Discover companies, explore opportunities and connect
-          with the right organizations.
-        </p>
-
-        <button className="primary-btn">
-          Get Started →
-        </button>
-      </section>
-
-      {/* Footer */}
-      <footer>
-        <div className="logo">Campus<span>Connect</span></div>
-
-        <p>
-          College–Company Recruitment & Internship Information Platform
-        </p>
-
-        <small>© 2026 CampusConnect. All rights reserved.</small>
-      </footer>
-
-    </div>
+    </BrowserRouter>
   );
 }
 
