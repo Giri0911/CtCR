@@ -1,4 +1,5 @@
 import "./App.css";
+import "./redesign.css";
 
 import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
 import logo from "./assets/hero.png";
@@ -79,6 +80,8 @@ function App() {
         <Route path="/register" element={<Register />} />
 
         <Route path="/college" element={<CollegeDashboard />} />
+
+        <Route path="/college/college-profile" element={<CollegeDashboard />} />
 
         <Route path="/college/companies" element={<CompanyDirectory />} />
 

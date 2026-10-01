@@ -1,16 +1,25 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { loadOpportunities, saveOpportunities } from "../Data/opportunities.js";
+
+function loadCompanyProfile() {
+  try {
+    return JSON.parse(localStorage.getItem("companyProfile") || "{}");
+  } catch {
+    return {};
+  }
+}
 
 function PostOpportunity() {
 
   const navigate = useNavigate();
+  const companyProfile = loadCompanyProfile();
 
   const [form, setForm] = useState({
     type: "Job",
     title: "",
-    company: "",
-    location: "",
+    company: companyProfile.name || "",
+    location: companyProfile.location || "",
     mode: "Full Time",
     openings: "",
     salary: "",
@@ -57,11 +66,7 @@ function PostOpportunity() {
 
     saveOpportunities([...loadOpportunities(), newOpportunity]);
 
-    alert(
-      "Opportunity submitted successfully. It will appear as Under Review until verified."
-    );
-
-    navigate("/company");
+    navigate("/company", { state: { opportunitySubmitted: true } });
 
   };
 
@@ -72,6 +77,10 @@ function PostOpportunity() {
       <div className="post-opportunity-box">
 
         <div className="post-opportunity-heading">
+
+          <Link className="post-opportunity-back" to="/company">
+            ← Company dashboard
+          </Link>
 
           <p>
             COMPANY PORTAL
@@ -130,6 +139,7 @@ function PostOpportunity() {
             placeholder="Company name"
             value={form.company}
             onChange={handleChange}
+            readOnly={Boolean(companyProfile.name)}
             required
           />
 

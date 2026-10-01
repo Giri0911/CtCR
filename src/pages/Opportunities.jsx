@@ -2,6 +2,17 @@ import { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { loadOpportunities } from "../Data/opportunities.js";
 
+const SAVED_OPPORTUNITIES_KEY = "savedOpportunities";
+
+function loadSavedOpportunityIds() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(SAVED_OPPORTUNITIES_KEY) || "[]");
+    return Array.isArray(saved) ? saved.map(String) : [];
+  } catch {
+    return [];
+  }
+}
+
 function Opportunities() {
   const [searchParams] = useSearchParams();
   const [opportunities] = useState(loadOpportunities);
@@ -9,6 +20,17 @@ function Opportunities() {
   const [search, setSearch] = useState("");
   const [location, setLocation] = useState("All Locations");
   const [verifiedOnly, setVerifiedOnly] = useState(true);
+  const [savedOnly, setSavedOnly] = useState(false);
+  const [savedOpportunityIds, setSavedOpportunityIds] = useState(loadSavedOpportunityIds);
+
+  const toggleSavedOpportunity = (opportunityId) => {
+    const id = String(opportunityId);
+    const nextSavedIds = savedOpportunityIds.includes(id)
+      ? savedOpportunityIds.filter((savedId) => savedId !== id)
+      : [...savedOpportunityIds, id];
+    localStorage.setItem(SAVED_OPPORTUNITIES_KEY, JSON.stringify(nextSavedIds));
+    setSavedOpportunityIds(nextSavedIds);
+  };
 
   const locations = [...new Set(opportunities.map((item) => item.location))];
   const filteredOpportunities = opportunities.filter((item) => {
@@ -20,8 +42,9 @@ function Opportunities() {
       `${item.title} ${item.company} ${item.location}`.toLowerCase().includes(query);
     const matchesVerification =
       item.status !== "rejected" && (!verifiedOnly || item.verified);
+    const matchesSaved = !savedOnly || savedOpportunityIds.includes(String(item.id));
 
-    return matchesType && matchesLocation && matchesSearch && matchesVerification;
+    return matchesType && matchesLocation && matchesSearch && matchesVerification && matchesSaved;
   });
 
   return (
@@ -61,6 +84,14 @@ function Opportunities() {
           />
           Verified only
         </label>
+        <label className="saved-opportunities-toggle">
+          <input
+            type="checkbox"
+            checked={savedOnly}
+            onChange={(event) => setSavedOnly(event.target.checked)}
+          />
+          Saved only <strong>{savedOpportunityIds.length}</strong>
+        </label>
       </section>
 
       <p className="opportunities-count">{filteredOpportunities.length} opportunities</p>
@@ -74,6 +105,15 @@ function Opportunities() {
                   {item.type}
                 </span>
                 {item.verified && <span className="verified-badge">Verified</span>}
+                <button
+                  className={`save-opportunity-button${savedOpportunityIds.includes(String(item.id)) ? " is-saved" : ""}`}
+                  type="button"
+                  aria-label={`${savedOpportunityIds.includes(String(item.id)) ? "Remove saved" : "Save"} ${item.title}`}
+                  aria-pressed={savedOpportunityIds.includes(String(item.id))}
+                  onClick={() => toggleSavedOpportunity(item.id)}
+                >
+                  {savedOpportunityIds.includes(String(item.id)) ? "★" : "☆"}
+                </button>
               </div>
               <h2>{item.title}</h2>
               <p className="opportunity-company">{item.company}</p>

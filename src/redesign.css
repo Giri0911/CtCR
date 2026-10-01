@@ -1,0 +1,1832 @@
+:root {
+  --ink: #1d2932;
+  --muted: #637680;
+  --line: #d6e1e6;
+  --page: #eef3f4;
+  --surface: #ffffff;
+  --green: #087f8c;
+  --green-dark: #1d3038;
+  --green-soft: #d9eef0;
+  --coral: #e8754c;
+  --coral-soft: #feeadf;
+  --citrus: #e0b340;
+  --shadow-soft: 0 16px 38px rgba(29, 48, 56, 0.1);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--page);
+  color: var(--ink);
+  font-family: "Trebuchet MS", Arial, sans-serif;
+}
+
+h1,
+h2,
+h3 {
+  font-family: Georgia, "Times New Roman", serif;
+  letter-spacing: 0;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  transition: border-color 160ms ease, background-color 160ms ease, color 160ms ease,
+    box-shadow 160ms ease, transform 160ms ease;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid rgba(232, 179, 64, 0.7);
+  outline-offset: 3px;
+}
+
+button {
+  font-weight: 700;
+}
+
+/* Landing */
+
+.home-page {
+  padding: 0 6vw 48px;
+  background-color: #f3f6f7;
+  background-image: linear-gradient(rgba(8, 127, 140, 0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(8, 127, 140, 0.055) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+.home-header {
+  min-height: 76px;
+  border-bottom-color: rgba(25, 59, 59, 0.15);
+}
+
+.home-brand {
+  font-size: 24px;
+}
+
+.home-nav a,
+.home-actions a {
+  border-radius: 5px;
+}
+
+.home-nav .home-nav-cta,
+.home-actions a:first-child {
+  box-shadow: 0 7px 16px rgba(8, 127, 140, 0.2);
+}
+
+.home-hero {
+  min-height: 640px;
+  gap: 6%;
+}
+
+.home-copy h1 {
+  max-width: 540px;
+  font-size: 60px;
+  line-height: 1.05;
+}
+
+.home-eyebrow {
+  color: var(--coral);
+}
+
+.home-description {
+  max-width: 500px;
+}
+
+.home-actions a:hover,
+.home-nav a:hover {
+  transform: translateY(-2px);
+}
+
+.home-visual {
+  padding: 12px 0 0 12px;
+}
+
+.home-visual::before {
+  border-width: 2px;
+}
+
+.home-visual img {
+  border-radius: 4px;
+}
+
+.home-visual figcaption {
+  border-radius: 4px 0 0 4px;
+}
+
+/* Authentication */
+
+.auth-page {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background-color: #edf3f4;
+  background-image: linear-gradient(135deg, rgba(29, 48, 56, 0.97) 0 29%, transparent 29%),
+    linear-gradient(315deg, rgba(224, 179, 64, 0.15), transparent 42%);
+}
+
+.auth-box {
+  width: min(460px, 100%);
+  padding: 38px;
+  border: 1px solid rgba(217, 229, 225, 0.95);
+  border-top: 4px solid var(--coral);
+  border-radius: 7px;
+  box-shadow: 0 24px 70px rgba(29, 48, 56, 0.19);
+  animation: surface-enter 380ms ease-out both;
+}
+
+.auth-box h1 {
+  margin-bottom: 16px;
+}
+
+.auth-box h2 {
+  margin-bottom: 7px;
+  font-size: 27px;
+}
+
+.auth-box form {
+  gap: 9px;
+}
+
+.auth-box input,
+.auth-box select {
+  min-height: 44px;
+  padding: 0 12px;
+}
+
+.auth-box button[type="submit"] {
+  min-height: 46px;
+  margin-top: 9px;
+  box-shadow: 0 7px 16px rgba(8, 127, 140, 0.2);
+}
+
+.role-selection button {
+  min-height: 44px;
+  border-radius: 5px;
+}
+
+.role-selection .role-active {
+  background: var(--green-soft);
+  border-color: var(--green);
+  color: var(--green-dark);
+}
+
+/* Dashboard shells and navigation */
+
+.college-dashboard,
+.company-dashboard,
+.admin-dashboard {
+  background: var(--page);
+}
+
+.college-dashboard,
+.company-dashboard {
+  display: grid;
+  grid-template-columns: 246px minmax(0, 1fr);
+}
+
+.sidebar,
+.company-sidebar {
+  position: sticky;
+  top: 0;
+  align-self: start;
+  width: 246px;
+  height: 100vh;
+  min-height: 100vh;
+  padding: 27px 16px;
+  background: var(--green-dark);
+  box-shadow: 8px 0 24px rgba(29, 48, 56, 0.1);
+}
+
+.dashboard-logo,
+.company-dashboard-logo {
+  padding-bottom: 32px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 23px;
+}
+
+.menu-title,
+.company-menu-title {
+  color: #9bbab1;
+  font-size: 10px;
+}
+
+.sidebar a,
+.company-sidebar a {
+  position: relative;
+  min-height: 42px;
+  margin-bottom: 4px;
+  padding: 11px 12px;
+  border-radius: 5px;
+  color: #d3e2dd;
+}
+
+.sidebar a:hover,
+.company-sidebar a:hover {
+  background: rgba(255, 255, 255, 0.09);
+  color: #ffffff;
+  transform: translateX(2px);
+}
+
+.sidebar .active-menu,
+.company-sidebar .company-active-menu {
+  background: #087f8c;
+  color: #ffffff;
+  box-shadow: inset 3px 0 var(--citrus);
+}
+
+.dashboard-main,
+.company-dashboard-main {
+  width: auto;
+  min-width: 0;
+  margin: 0;
+  padding: 34px clamp(22px, 3vw, 46px);
+}
+
+.dashboard-main.profile-only > :not(#college-profile),
+.company-dashboard-main.profile-only > :not(#company-profile) {
+  display: none;
+}
+
+.dashboard-main.drive-requests-only > :not(#drive-requests),
+.company-dashboard-main.drive-requests-only > :not(#drive-requests) {
+  display: none;
+}
+
+.dashboard-header,
+.company-header {
+  min-height: 60px;
+  margin-bottom: 22px;
+}
+
+.dashboard-header h1,
+.company-header h1 {
+  font-size: 30px;
+}
+
+.college-profile-section,
+.company-profile-card,
+.company-actions,
+.company-form-card,
+.company-opportunities-section,
+.recent-section,
+.companies-section {
+  border-radius: 7px;
+}
+
+.dashboard-stats,
+.company-stats {
+  gap: 13px;
+}
+
+.dashboard-stat,
+.company-stat-card {
+  border-radius: 6px;
+  box-shadow: 0 4px 14px rgba(25, 59, 59, 0.035);
+  transition: transform 170ms ease, box-shadow 170ms ease;
+}
+
+.dashboard-stat:hover,
+.company-stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-soft);
+}
+
+.company-card,
+.directory-card,
+.opportunity-card,
+.admin-opportunity-card {
+  border-radius: 7px;
+  transition: transform 170ms ease, border-color 170ms ease, box-shadow 170ms ease;
+}
+
+.company-card:hover,
+.directory-card:hover,
+.opportunity-card:hover,
+.admin-opportunity-card:hover {
+  transform: translateY(-3px);
+  border-color: #a7cdd1;
+  box-shadow: var(--shadow-soft);
+}
+
+.admin-drive-request-card {
+  align-items: flex-start;
+}
+
+.admin-drive-status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.admin-drive-pending {
+  background: #fff4d4;
+  color: #7a5a0b;
+}
+
+.admin-drive-approved {
+  background: #d9eef0;
+  color: #12656d;
+}
+
+.admin-drive-rejected {
+  background: #feeadf;
+  color: #a24d32;
+}
+
+.admin-drive-company-status {
+  margin-top: 12px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.organization-verification {
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+
+.organization-verification-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.organization-verification-heading h3 {
+  color: var(--ink);
+  font-size: 17px;
+}
+
+.organization-verification > p {
+  margin: 6px 0 14px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.organization-verification-status {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  min-height: 26px;
+  padding: 5px 9px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.verification-not_submitted,
+.verification-rejected {
+  background: var(--coral-soft);
+  color: #a24d32;
+}
+
+.verification-pending {
+  background: #fff4d4;
+  color: #7a5a0b;
+}
+
+.verification-approved,
+.verification-verified {
+  background: var(--green-soft);
+  color: #12656d;
+}
+
+.verification-application-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 13px;
+  margin-top: 16px;
+}
+
+.verification-application-form label {
+  display: grid;
+  align-content: start;
+  gap: 7px;
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.verification-application-form input,
+.verification-application-form textarea {
+  width: 100%;
+  min-height: 42px;
+  padding: 10px 11px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: white;
+  color: var(--ink);
+  font: inherit;
+  font-weight: 400;
+}
+
+.verification-application-form textarea {
+  resize: vertical;
+}
+
+.verification-note-field,
+.verification-application-actions {
+  grid-column: 1 / -1;
+}
+
+.verification-application-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+
+.admin-verification-card {
+  align-items: flex-start;
+}
+
+.admin-verification-card .admin-details span {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.admin-verification-card .admin-actions {
+  flex-wrap: wrap;
+}
+
+.verification-review-controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 190px;
+  gap: 10px;
+  margin: 0 0 16px;
+}
+
+.verification-review-controls input,
+.verification-review-controls select {
+  width: 100%;
+  min-width: 0;
+  min-height: 42px;
+  padding: 9px 11px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: white;
+  color: var(--ink);
+}
+
+.verification-review-documents {
+  display: grid;
+  gap: 7px;
+  margin-top: 14px;
+}
+
+.verification-review-documents > strong {
+  color: var(--ink);
+  font-size: 11px;
+}
+
+.verification-review-documents a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  max-width: 520px;
+  padding: 9px 11px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: #f7fafb;
+  color: var(--green);
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.verification-review-documents a:hover {
+  border-color: var(--green);
+  background: var(--green-soft);
+}
+
+.verification-review-documents small {
+  flex: 0 0 auto;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 400;
+}
+
+.verification-upload-guidance {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 400;
+}
+
+.verification-document-list {
+  display: grid;
+  grid-column: 1 / -1;
+  gap: 7px;
+  list-style: none;
+}
+
+.verification-document-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  color: var(--ink);
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+
+.verification-document-list button {
+  min-height: 32px;
+  flex: 0 0 auto;
+  padding: 5px 8px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: white;
+  color: #a24d32;
+  cursor: pointer;
+  font-size: 10px;
+}
+
+.verification-form-error {
+  grid-column: 1 / -1;
+  color: #a24d32;
+  font-size: 12px;
+}
+
+.company-button,
+.view-button,
+.request-drive-button,
+.post-job-btn,
+.post-internship-btn,
+.small-action-btn,
+.submit-company-btn,
+.college-profile-edit,
+.college-profile-save,
+.company-profile-edit,
+.company-profile-save,
+.company-profile-cancel,
+.accept-drive-request,
+.reject-drive-request,
+.verify-btn,
+.reject-btn,
+.view-company-btn,
+.post-opportunity-box button {
+  border-radius: 5px;
+}
+
+.company-button:hover,
+.view-company-btn:hover,
+.request-drive-button:hover,
+.post-job-btn:hover,
+.post-internship-btn:hover,
+.small-action-btn:hover,
+.submit-company-btn:hover,
+.college-profile-edit:hover,
+.college-profile-save:hover,
+.company-profile-edit:hover,
+.company-profile-save:hover,
+.accept-drive-request:hover,
+.verify-btn:hover {
+  transform: translateY(-1px);
+  filter: brightness(0.97);
+}
+
+/* Search, filters, tables and forms */
+
+input,
+select,
+textarea {
+  border-radius: 5px;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px rgba(8, 127, 140, 0.14);
+  outline: none;
+}
+
+.dashboard-search select,
+.search-box,
+.directory-search-box,
+.directory-search select,
+.opportunities-filters > input,
+.opportunities-filters > select {
+  min-height: 44px;
+  border-color: var(--line);
+  border-radius: 5px;
+  background: var(--surface);
+}
+
+.opportunity-table,
+.company-table,
+.admin-section {
+  border-radius: 7px;
+  box-shadow: 0 4px 14px rgba(25, 59, 59, 0.04);
+}
+
+.table-row,
+.company-table-row,
+.admin-opportunity-card {
+  transition: background-color 150ms ease, border-color 150ms ease;
+}
+
+.table-row:hover,
+.company-table-row:hover {
+  background: #f2f8f8;
+}
+
+.drive-request-form,
+.drive-request-row,
+.company-drive-request,
+.college-profile-section,
+.company-profile-card {
+  border-color: var(--line);
+  box-shadow: 0 4px 14px rgba(25, 59, 59, 0.04);
+}
+
+.college-profile-meta > div,
+.company-profile-meta > div {
+  background: #f7faf8;
+}
+
+/* Directory and opportunities */
+
+.directory-page {
+  padding: 42px max(24px, 6vw);
+  background: var(--page);
+}
+
+.directory-header h1,
+.directory-result-heading h2,
+.opportunities-header h1 {
+  color: var(--ink);
+}
+
+.directory-location,
+.directory-card,
+.company-modal,
+.opportunity-card {
+  border-radius: 7px;
+  box-shadow: 0 5px 18px rgba(25, 59, 59, 0.05);
+}
+
+.directory-search-box:focus-within {
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px rgba(8, 127, 140, 0.12);
+}
+
+.directory-card .view-company-btn {
+  min-height: 40px;
+}
+
+.company-modal-overlay {
+  backdrop-filter: blur(4px);
+}
+
+.company-modal {
+  border-top: 4px solid var(--coral);
+}
+
+.opportunities-page {
+  padding-top: 40px;
+}
+
+.opportunities-filters > label {
+  min-height: 42px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: var(--surface);
+}
+
+.opportunities-filters input[type="checkbox"] {
+  accent-color: var(--green);
+}
+
+/* Admin review */
+
+.admin-dashboard {
+  display: grid;
+  grid-template-columns: 246px minmax(0, 1fr);
+}
+
+.admin-sidebar {
+  position: sticky;
+  top: 0;
+  width: 246px;
+  height: 100vh;
+  min-height: 100vh;
+  padding: 27px 16px;
+  background: var(--green-dark);
+  box-shadow: 8px 0 24px rgba(18, 61, 59, 0.08);
+}
+
+.admin-menu button {
+  min-height: 42px;
+  border-radius: 5px;
+}
+
+.admin-menu button.active {
+  background: #087f8c;
+  box-shadow: inset 3px 0 var(--citrus);
+}
+
+.admin-main {
+  min-width: 0;
+  padding: 36px;
+}
+
+.admin-header h1 {
+  color: var(--ink);
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+.admin-header p {
+  color: var(--coral);
+}
+
+.admin-stats {
+  gap: 13px;
+}
+
+.admin-stat,
+.admin-section {
+  border-color: var(--line);
+  border-radius: 7px;
+}
+
+.verify-btn {
+  background: var(--green);
+}
+
+.reject-btn {
+  border-color: #e7c9c1;
+  color: #a54f3a;
+}
+
+/* Opportunity publishing */
+
+.post-opportunity-page {
+  background-color: var(--page);
+  background-image: linear-gradient(rgba(8, 127, 140, 0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(8, 127, 140, 0.055) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+.post-opportunity-box {
+  border: 1px solid var(--line);
+  border-top: 4px solid var(--coral);
+  border-radius: 7px;
+  box-shadow: var(--shadow-soft);
+}
+
+.post-opportunity-box button {
+  min-height: 44px;
+  background: var(--green);
+}
+
+.post-opportunity-box button:hover {
+  background: var(--green-dark);
+  transform: translateY(-1px);
+}
+
+.post-opportunity-back {
+  display: inline-flex;
+  margin-bottom: 22px;
+  color: var(--green);
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.post-opportunity-back:hover {
+  color: var(--coral);
+  transform: translateX(-2px);
+}
+
+.post-opportunity-box input[readonly] {
+  background: #f0f5f2;
+  color: var(--muted);
+  cursor: not-allowed;
+}
+
+.opportunity-submission-notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 0 0 20px;
+  padding: 15px 17px;
+  border: 1px solid #b8dadd;
+  border-left: 4px solid var(--green);
+  border-radius: 6px;
+  background: #f3fafb;
+  animation: surface-enter 250ms ease-out both;
+}
+
+.opportunity-submission-notice > div {
+  display: grid;
+  gap: 4px;
+}
+
+.opportunity-submission-notice strong {
+  color: var(--green-dark);
+  font-size: 13px;
+}
+
+.opportunity-submission-notice span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.opportunity-submission-notice button {
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 21px;
+}
+
+.opportunity-submission-notice button:hover {
+  background: var(--green-soft);
+  color: var(--green-dark);
+}
+
+/* Palette and surface refinements */
+
+.home-visual::before {
+  border-color: var(--citrus);
+}
+
+.home-proof strong,
+.home-eyebrow,
+.directory-label,
+.opportunities-eyebrow {
+  color: var(--coral);
+}
+
+.home-visual figcaption span {
+  color: var(--citrus);
+}
+
+.college-profile-section,
+.company-profile-card,
+.company-actions,
+.company-form-card,
+.company-opportunities-section,
+.recent-section,
+.companies-section,
+.admin-section,
+.opportunity-card,
+.directory-card {
+  border-radius: 9px;
+  box-shadow: 0 7px 22px rgba(29, 48, 56, 0.055);
+}
+
+.college-profile-section,
+.company-profile-card,
+.admin-section {
+  border-top: 3px solid var(--green);
+}
+
+.dashboard-stat,
+.company-stat-card,
+.admin-stat {
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(29, 48, 56, 0.05);
+}
+
+.dashboard-stat:nth-child(1),
+.company-stat-card:nth-child(1),
+.admin-stat:nth-child(1) {
+  border-top: 3px solid var(--green);
+}
+
+.dashboard-stat:nth-child(2),
+.company-stat-card:nth-child(2),
+.admin-stat:nth-child(2) {
+  border-top: 3px solid var(--coral);
+}
+
+.dashboard-stat:nth-child(3),
+.company-stat-card:nth-child(3),
+.admin-stat:nth-child(3) {
+  border-top: 3px solid var(--citrus);
+}
+
+.dashboard-stat:nth-child(4),
+.company-stat-card:nth-child(4),
+.admin-stat:nth-child(4) {
+  border-top: 3px solid #5a79aa;
+}
+
+.blue-symbol {
+  background: #d9eef0;
+  color: #087f8c;
+}
+
+.green-symbol {
+  background: #e7efcf;
+  color: #566b20;
+}
+
+.orange-symbol {
+  background: var(--coral-soft);
+  color: #a24d32;
+}
+
+.purple-symbol {
+  background: #fff4d4;
+  color: #876b18;
+}
+
+.table-header,
+.company-table-header {
+  background: #e8f1f2;
+  color: #526872;
+}
+
+.table-row:hover,
+.company-table-row:hover {
+  background: #f0f7f8;
+}
+
+.company-button,
+.view-button,
+.request-drive-button,
+.post-job-btn,
+.submit-company-btn,
+.college-profile-save,
+.company-profile-save,
+.accept-drive-request,
+.verify-btn,
+.post-opportunity-box button {
+  border-color: var(--green);
+  background: var(--green);
+  color: #ffffff;
+}
+
+.post-internship-btn {
+  border: 1px solid #ead59b;
+  background: #fff4d4;
+  color: #775b10;
+}
+
+.small-action-btn,
+.college-profile-edit,
+.company-profile-edit,
+.company-profile-cancel {
+  border-color: #a9cdd0;
+  background: #f5fbfb;
+  color: var(--green);
+}
+
+.opportunities-filters {
+  grid-template-columns: minmax(220px, 1fr) 160px 180px auto auto;
+}
+
+.opportunity-card-heading {
+  gap: 8px;
+}
+
+.save-opportunity-button {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  place-items: center;
+  margin-left: auto;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: white;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 23px;
+}
+
+.save-opportunity-button:hover,
+.save-opportunity-button.is-saved {
+  border-color: #ead59b;
+  background: #fff4d4;
+  color: #9b7415;
+}
+
+.saved-opportunities-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 42px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: white;
+  color: var(--ink);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.saved-opportunities-toggle input {
+  accent-color: var(--green);
+}
+
+.saved-opportunities-toggle strong {
+  color: var(--green);
+}
+
+.notification-center {
+  position: relative;
+  z-index: 60;
+  flex: 0 0 auto;
+}
+
+.notification-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 7px 11px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: white;
+  color: var(--ink);
+  cursor: pointer;
+  font-size: 11px;
+}
+
+.notification-trigger:hover,
+.notification-trigger[aria-expanded="true"] {
+  border-color: var(--green);
+  background: var(--green-soft);
+}
+
+.notification-bell {
+  color: var(--green);
+  font-size: 16px;
+}
+
+.notification-count {
+  display: grid;
+  min-width: 19px;
+  height: 19px;
+  place-items: center;
+  padding: 0 5px;
+  border-radius: 10px;
+  background: var(--coral);
+  color: white;
+  font-size: 10px;
+}
+
+.notification-popover {
+  position: absolute;
+  z-index: 100;
+  top: calc(100% + 9px);
+  right: 0;
+  width: min(360px, calc(100vw - 28px));
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: white;
+  box-shadow: 0 18px 42px rgba(29, 48, 56, 0.2);
+}
+
+.notification-popover-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 13px 15px;
+  border-bottom: 1px solid var(--line);
+}
+
+.notification-popover-heading h2 {
+  color: var(--ink);
+  font-size: 16px;
+}
+
+.notification-popover-heading button {
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 21px;
+}
+
+.notification-empty {
+  padding: 22px 15px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.notification-list {
+  display: grid;
+  max-height: min(60vh, 440px);
+  overflow-y: auto;
+}
+
+.notification-item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 13px 15px;
+  border-bottom: 1px solid #edf1f2;
+  border-left: 3px solid var(--green);
+}
+
+.notification-item:last-child {
+  border-bottom: 0;
+}
+
+.notification-warning {
+  border-left-color: var(--coral);
+}
+
+.notification-success {
+  border-left-color: #718b32;
+}
+
+.notification-item strong {
+  color: var(--ink);
+  font-size: 12px;
+}
+
+.notification-item p {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.notification-item a {
+  flex: 0 0 auto;
+  color: var(--green);
+  font-size: 11px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.drive-request-timeline {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 14px;
+  list-style: none;
+}
+
+.drive-timeline-step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: #f7fafb;
+}
+
+.drive-timeline-step > span {
+  display: grid;
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+  place-items: center;
+  border-radius: 50%;
+  background: #e2e8eb;
+  color: #53666d;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.drive-timeline-step > div {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+.drive-timeline-step strong {
+  color: var(--ink);
+  font-size: 10px;
+}
+
+.drive-timeline-step small {
+  color: var(--muted);
+  font-size: 9px;
+  overflow-wrap: anywhere;
+}
+
+.drive-timeline-step.step-complete {
+  border-color: #bddbd7;
+  background: #f2f9f8;
+}
+
+.drive-timeline-step.step-complete > span,
+.drive-timeline-step.step-current > span {
+  background: var(--green);
+  color: white;
+}
+
+.drive-timeline-step.step-current {
+  border-color: #88c2c5;
+  background: var(--green-soft);
+}
+
+.drive-timeline-step.step-rejected {
+  border-color: #e8c7b9;
+  background: #fff7f2;
+}
+
+.drive-timeline-step.step-rejected > span {
+  background: var(--coral);
+  color: white;
+}
+
+.drive-timeline-step.step-locked {
+  opacity: 0.68;
+}
+
+@media (max-width: 750px) {
+  .drive-request-timeline {
+    grid-template-columns: 1fr;
+  }
+
+  .notification-popover {
+    right: -8px;
+  }
+}
+
+@media (max-width: 1100px) {
+  .opportunities-filters {
+    grid-template-columns: minmax(180px, 1fr) 150px 160px 1fr 1fr;
+  }
+}
+
+@media (max-width: 750px) {
+  .opportunities-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .opportunities-filters > input {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 520px) {
+  .opportunities-filters {
+    grid-template-columns: 1fr;
+  }
+
+  .opportunities-filters > input {
+    grid-column: 1;
+  }
+
+  .notification-trigger > span:not(.notification-bell):not(.notification-count) {
+    display: none;
+  }
+
+  .notification-trigger {
+    width: 44px;
+    height: 44px;
+    padding: 0;
+  }
+
+  .notification-bell {
+    font-size: 20px;
+  }
+}
+
+.reject-drive-request,
+.reject-btn {
+  border-color: #e7bdad;
+  background: #ffffff;
+  color: #a24d32;
+}
+
+.company-verified,
+.verified-badge,
+.directory-verified,
+.admin-verified {
+  background: var(--green-soft);
+  color: #12656d;
+}
+
+.admin-drive-pending,
+.drive-request-status.status-pending {
+  background: #fff4d4;
+  color: #7a5a0b;
+}
+
+.admin-drive-approved,
+.drive-request-status.status-accepted {
+  background: var(--green-soft);
+  color: #12656d;
+}
+
+.admin-drive-rejected,
+.drive-request-status.status-rejected {
+  background: var(--coral-soft);
+  color: #a24d32;
+}
+
+.company-card:hover,
+.directory-card:hover,
+.opportunity-card:hover,
+.admin-opportunity-card:hover {
+  border-color: #a7cdd1;
+  box-shadow: 0 16px 34px rgba(29, 48, 56, 0.11);
+}
+
+.company-sidebar a:hover,
+.sidebar a:hover,
+.admin-menu button:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.company-sidebar .company-active-menu,
+.sidebar .active-menu,
+.admin-menu button.active {
+  background: #087f8c;
+  box-shadow: inset 3px 0 var(--citrus);
+}
+
+.directory-card .view-company-btn,
+.verify-btn,
+.reject-btn,
+.company-action-buttons button {
+  min-height: 42px;
+}
+
+/* Motion and responsive behavior */
+
+.dashboard-header,
+.company-header,
+.company-profile-card,
+.college-profile-section,
+.companies-section,
+.recent-section,
+.company-stats,
+.company-actions,
+.company-opportunities-section,
+.directory-header,
+.directory-grid,
+.opportunities-grid,
+.admin-stats,
+.admin-section {
+  animation: surface-enter 340ms ease-out both;
+}
+
+@keyframes surface-enter {
+  from {
+    opacity: 0;
+    transform: translateY(7px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 1100px) {
+  .college-dashboard,
+  .company-dashboard,
+  .admin-dashboard {
+    grid-template-columns: 220px minmax(0, 1fr);
+  }
+
+  .sidebar,
+  .company-sidebar,
+  .admin-sidebar {
+    width: 220px;
+  }
+
+  .dashboard-main,
+  .company-dashboard-main,
+  .admin-main {
+    padding: 28px 24px;
+  }
+
+  .company-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 750px) {
+  .college-dashboard,
+  .company-dashboard,
+  .admin-dashboard {
+    display: block;
+  }
+
+  .sidebar,
+  .company-sidebar,
+  .admin-sidebar {
+    width: 100%;
+    height: auto;
+    min-height: 0;
+    padding: 10px 12px;
+    box-shadow: 0 4px 12px rgba(18, 61, 59, 0.1);
+  }
+
+  .admin-sidebar {
+    position: sticky;
+    z-index: 25;
+  }
+
+  .admin-menu {
+    margin-top: 8px;
+  }
+
+  .dashboard-main,
+  .company-dashboard-main,
+  .admin-main {
+    width: 100%;
+    margin: 0;
+    padding: 24px 18px;
+  }
+
+  .home-copy h1 {
+    font-size: 44px;
+  }
+
+  .home-proof {
+    gap: 10px;
+  }
+
+  .company-grid,
+  .directory-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .directory-search,
+  .opportunities-filters {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .directory-search {
+    display: grid;
+  }
+
+  .directory-search-box {
+    grid-column: 1 / -1;
+    min-height: 44px;
+  }
+
+  .opportunities-filters > input {
+    grid-column: 1 / -1;
+  }
+
+  .admin-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .home-page {
+    padding-right: 18px;
+    padding-left: 18px;
+  }
+
+  .home-header {
+    min-height: 68px;
+  }
+
+  .home-brand {
+    font-size: 19px;
+  }
+
+  .home-nav {
+    gap: 3px;
+  }
+
+  .home-nav a {
+    padding: 9px;
+    font-size: 12px;
+  }
+
+  .home-copy h1 {
+    font-size: 38px;
+  }
+
+  .home-proof {
+    grid-template-columns: 1fr;
+  }
+
+  .home-visual figcaption {
+    max-width: 210px;
+    padding: 12px 14px;
+    font-size: 15px;
+  }
+
+  .auth-box {
+    padding: 28px 22px;
+  }
+
+  .dashboard-main,
+  .company-dashboard-main,
+  .admin-main {
+    padding: 20px 14px;
+  }
+
+  .dashboard-header,
+  .company-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 44px;
+    align-items: start;
+    gap: 12px;
+  }
+
+  .dashboard-header > :first-child,
+  .company-header > :first-child {
+    grid-column: 1;
+    min-width: 0;
+  }
+
+  .dashboard-header .notification-center,
+  .company-header .notification-center {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: end;
+  }
+
+  .college-user,
+  .company-user {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .college-user > div:last-child,
+  .company-user > div:last-child {
+    min-width: 0;
+  }
+
+  .college-user strong,
+  .company-user strong {
+    overflow-wrap: anywhere;
+  }
+
+  .dashboard-header h1,
+  .company-header h1 {
+    font-size: 24px;
+  }
+
+  .company-grid,
+  .directory-grid,
+  .admin-stats,
+  .directory-search,
+  .opportunities-filters {
+    grid-template-columns: 1fr;
+  }
+
+  .directory-search-box,
+  .opportunities-filters > input {
+    grid-column: 1;
+  }
+
+  .directory-search select {
+    min-height: 44px;
+  }
+
+  .directory-header,
+  .directory-result-heading,
+  .opportunities-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .company-profile-card {
+    align-items: flex-start;
+    gap: 12px;
+    padding: 16px;
+  }
+
+  .company-profile-logo {
+    width: 48px;
+    height: 48px;
+    flex: 0 0 48px;
+  }
+
+  .company-profile-info {
+    width: 100%;
+  }
+
+  .company-profile-view-heading .company-title-row {
+    flex-wrap: wrap;
+  }
+
+  .college-profile-section {
+    padding: 16px;
+  }
+
+  .college-profile-heading {
+    align-items: flex-start;
+  }
+
+  .company-actions {
+    padding: 17px;
+  }
+
+  .admin-section {
+    padding: 16px;
+  }
+
+  .admin-opportunity-card {
+    padding: 15px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@media (max-width: 750px) {
+  .sidebar,
+  .company-sidebar,
+  .admin-menu {
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    touch-action: pan-x;
+  }
+
+  .sidebar::-webkit-scrollbar,
+  .company-sidebar::-webkit-scrollbar,
+  .admin-menu::-webkit-scrollbar {
+    display: none;
+  }
+
+  .sidebar a,
+  .company-sidebar a,
+  .admin-menu button {
+    min-height: 44px;
+    font-size: 12px;
+  }
+
+  .company-modal-overlay {
+    align-items: flex-end;
+    padding: 10px;
+  }
+
+  .company-modal {
+    width: 100%;
+    max-height: calc(100dvh - 20px);
+    padding: 25px 18px 18px;
+    border-radius: 12px 12px 7px 7px;
+  }
+
+  .modal-close {
+    top: 6px;
+    right: 8px;
+    display: grid;
+    width: 44px;
+    height: 44px;
+    place-items: center;
+  }
+
+  .modal-company-header {
+    align-items: flex-start;
+    padding-right: 28px;
+  }
+
+  .modal-title-row {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .modal-title-row h2 {
+    overflow-wrap: anywhere;
+  }
+
+  .modal-stats div {
+    padding: 11px 7px;
+  }
+
+  .modal-opportunity {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 520px) {
+  .dashboard-search,
+  .directory-search,
+  .opportunities-filters {
+    gap: 9px;
+  }
+
+  .dashboard-search select,
+  .directory-search select,
+  .opportunities-filters > input,
+  .opportunities-filters > select,
+  .auth-box input,
+  .auth-box select,
+  .post-opportunity-box input,
+  .post-opportunity-box select {
+    min-height: 44px;
+  }
+
+  .college-profile-edit,
+  .college-profile-save,
+  .company-profile-edit,
+  .company-profile-save,
+  .company-profile-cancel,
+  .request-drive-button,
+  .accept-drive-request,
+  .reject-drive-request,
+  .verify-btn,
+  .reject-btn,
+  .view-company-btn,
+  .post-job-btn,
+  .post-internship-btn {
+    min-height: 44px;
+  }
+
+  .company-actions .company-action-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .drive-request-row,
+  .company-drive-request {
+    overflow-wrap: anywhere;
+  }
+
+  .modal-stats {
+    gap: 6px;
+  }
+
+  .modal-stats div {
+    padding: 10px 5px;
+  }
+
+  .post-opportunity-box {
+    width: 100%;
+    padding: 24px 16px;
+  }
+
+  .verification-application-form {
+    grid-template-columns: 1fr;
+  }
+
+  .verification-note-field,
+  .verification-application-actions {
+    grid-column: 1;
+  }
+
+  .organization-verification-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .admin-verification-card .admin-actions {
+    width: 100%;
+  }
+
+  .admin-verification-card .admin-actions button {
+    flex: 1 1 130px;
+    min-height: 44px;
+  }
+
+  .verification-review-controls {
+    grid-template-columns: 1fr;
+  }
+
+  .verification-review-documents a {
+    align-items: flex-start;
+    flex-direction: column;
+    overflow-wrap: anywhere;
+  }
+
+  .verification-form-error,
+  .verification-document-list {
+    grid-column: 1;
+  }
+}
