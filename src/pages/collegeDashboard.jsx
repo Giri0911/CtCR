@@ -301,37 +301,47 @@ function CollegeDashboard() {
           Campus<span>Connect</span>
         </div>
 
-        <p className="menu-title">MAIN MENU</p>
+        <nav className="college-sidebar-nav" aria-label="College navigation">
+          <p className="menu-title">MAIN MENU</p>
 
-        <Link className={!showingProfile && !showingDriveRequests ? "active-menu" : ""} to="/college">
-          Dashboard
-        </Link>
+          <Link className={!showingProfile && !showingDriveRequests ? "active-menu" : ""} to="/college">
+            Dashboard
+          </Link>
 
-        <Link to="/college/companies">
-          Discover Companies
-        </Link>
+          <Link to="/college/companies">
+            Discover Companies
+          </Link>
 
-        <Link to="/opportunities?type=Job">
-          Job Vacancies
-        </Link>
+          <Link to="/opportunities">
+            All Opportunities
+          </Link>
 
-        <Link to="/opportunities?type=Internship">
-          Internships
-        </Link>
+          <Link to="/opportunities?type=Job">
+            Job Vacancies
+          </Link>
 
-        <Link className={showingDriveRequests ? "active-menu" : ""} to="/college#drive-requests">
-          Drive Requests
-        </Link>
+          <Link to="/opportunities?type=Internship">
+            Internships
+          </Link>
 
-        <p className="menu-title">ACCOUNT</p>
+          <Link to="/opportunities?saved=true">
+            Saved Opportunities
+          </Link>
 
-        <Link className={showingProfile ? "active-menu" : ""} to="/college/college-profile">
-          College Profile
-        </Link>
+          <Link className={showingDriveRequests ? "active-menu" : ""} to="/college#drive-requests">
+            Drive Requests
+          </Link>
 
-        <Link to="/">
-          Logout
-        </Link>
+          <p className="menu-title">ACCOUNT</p>
+
+          <Link className={showingProfile ? "active-menu" : ""} to="/college/college-profile">
+            College Profile
+          </Link>
+
+          <Link to="/">
+            Logout
+          </Link>
+        </nav>
 
       </aside>
 

@@ -107,5 +107,5 @@ export function isOpportunityExpired(opportunity, now = new Date()) {
 }
 
 export function isOpportunityActive(opportunity, now = new Date()) {
-  return opportunity.status !== "rejected" && !isOpportunityExpired(opportunity, now);
+  return !["rejected", "closed"].includes(opportunity.status) && !isOpportunityExpired(opportunity, now);
 }

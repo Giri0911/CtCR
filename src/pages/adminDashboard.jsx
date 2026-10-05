@@ -4,6 +4,7 @@ import { loadOpportunityReports, saveOpportunityReports } from "../Data/opportun
 import { loadDriveRequests, saveDriveRequests } from "../Data/driveRequests.js";
 import { loadVerificationRequests, saveVerificationRequests } from "../Data/verificationRequests.js";
 import NotificationCenter from "../components/NotificationCenter.jsx";
+import { Link } from "react-router-dom";
 
 function AdminDashboard() {
   const [opportunities, setOpportunities] = useState(loadOpportunities);
@@ -13,6 +14,8 @@ function AdminDashboard() {
   const [filter, setFilter] = useState("All");
   const [verificationFilter, setVerificationFilter] = useState("All");
   const [verificationSearch, setVerificationSearch] = useState("");
+  const [reportFilter, setReportFilter] = useState("All");
+  const [reportSearch, setReportSearch] = useState("");
 
   const verifyOpportunity = (id) => {
     const updated = opportunities.map((item) =>
@@ -108,13 +111,15 @@ function AdminDashboard() {
       ? []
       : filter === "Expired"
       ? opportunities.filter(isOpportunityExpired)
+      : filter === "Closed"
+      ? opportunities.filter((item) => item.status === "closed")
       : filter === "All"
       ? opportunities
       : filter === "Pending"
       ? opportunities.filter(
           (item) =>
             item.verified === false &&
-            item.status !== "rejected"
+            !["rejected", "closed"].includes(item.status)
         )
       : filter === "Verified"
       ? opportunities.filter(
@@ -133,7 +138,7 @@ function AdminDashboard() {
   const pending = opportunities.filter(
     (item) =>
       item.verified === false &&
-      item.status !== "rejected"
+      !["rejected", "closed"].includes(item.status)
   ).length;
 
   const verified = opportunities.filter(
@@ -144,6 +149,7 @@ function AdminDashboard() {
     (item) => item.type === "Internship"
   ).length;
   const expired = opportunities.filter(isOpportunityExpired).length;
+  const closed = opportunities.filter((item) => item.status === "closed").length;
 
   const pendingDriveRequests = driveRequests.filter(
     (request) => request.adminStatus === "pending"
@@ -175,6 +181,19 @@ function AdminDashboard() {
       request.registrationNumber,
       request.location,
       request.accountType
+    ].some((value) => value?.toLowerCase().includes(query));
+    return matchesStatus && matchesSearch;
+  });
+  const filteredOpportunityReports = opportunityReports.filter((report) => {
+    const matchesStatus = reportFilter === "All" ||
+      (reportFilter === "Reviewed" ? report.status !== "pending" : report.status === reportFilter);
+    const query = reportSearch.trim().toLowerCase();
+    const matchesSearch = !query || [
+      report.title,
+      report.company,
+      report.reportedBy,
+      report.reason,
+      report.details
     ].some((value) => value?.toLowerCase().includes(query));
     return matchesStatus && matchesSearch;
   });
@@ -262,6 +281,13 @@ function AdminDashboard() {
           </button>
 
           <button
+            className={filter === "Closed" ? "active" : ""}
+            onClick={() => setFilter("Closed")}
+          >
+            Closed Listings{closed > 0 ? ` (${closed})` : ""}
+          </button>
+
+          <button
             className={filter === "Drive Requests" ? "active" : ""}
             onClick={() => setFilter("Drive Requests")}
           >
@@ -284,6 +310,15 @@ function AdminDashboard() {
 
         </div>
 
+        <nav className="admin-portal-links" aria-label="Other CampusConnect pages">
+          <p>PORTALS</p>
+          <Link to="/">Home</Link>
+          <Link to="/college">College Portal</Link>
+          <Link to="/company">Company Portal</Link>
+          <Link to="/college/companies">Company Directory</Link>
+          <Link to="/opportunities">Browse Opportunities</Link>
+        </nav>
+
       </aside>
 
       {/* Main Content */}
@@ -303,7 +338,9 @@ function AdminDashboard() {
                     ? "Reported Listings"
                     : filter === "Expired"
                       ? "Expired Opportunities"
-                    : "Verification Dashboard"}
+                        : filter === "Closed"
+                          ? "Closed Opportunities"
+                      : "Verification Dashboard"}
             </h1>
             <span>
               {filter === "Drive Requests"
@@ -314,7 +351,9 @@ function AdminDashboard() {
                     ? "Review concerns reported about job and internship listings."
                     : filter === "Expired"
                       ? "Review listings that have passed their application deadline."
-                    : "Review and verify company opportunities."}
+                        : filter === "Closed"
+                          ? "Review company listings that have been closed or reopened."
+                      : "Review and verify company opportunities."}
             </span>
           </div>
 
@@ -408,6 +447,10 @@ function AdminDashboard() {
             <span>Expired Listings</span>
             <strong>{expired}</strong>
           </div>
+          <div className="admin-stat">
+            <span>Closed Listings</span>
+            <strong>{closed}</strong>
+          </div>
 
         </div>
         )}
@@ -426,6 +469,8 @@ function AdminDashboard() {
                     ? "Listing Reports"
                     : filter === "Expired"
                       ? "Expired Opportunities"
+                      : filter === "Closed"
+                        ? "Closed Opportunities"
                       : `${filter} Opportunities`}
             </h2>
             <span>
@@ -434,20 +479,43 @@ function AdminDashboard() {
                 : filter === "Organization Verification"
                   ? `${filteredVerificationRequests.length} ${filteredVerificationRequests.length === 1 ? "application" : "applications"}`
                   : filter === "Reported Listings"
-                    ? `${opportunityReports.length} ${opportunityReports.length === 1 ? "report" : "reports"}`
+                    ? `${filteredOpportunityReports.length} ${filteredOpportunityReports.length === 1 ? "report" : "reports"}`
                   : `${filteredOpportunities.length} opportunities`}
             </span>
           </div>
 
           {filter === "Reported Listings" ? (
-            opportunityReports.length === 0 ? (
+            <>
+              <div className="verification-review-controls">
+                <input
+                  type="search"
+                  value={reportSearch}
+                  onChange={(event) => setReportSearch(event.target.value)}
+                  placeholder="Search listings, companies, or reports..."
+                  aria-label="Search listing reports"
+                />
+                <select
+                  value={reportFilter}
+                  onChange={(event) => setReportFilter(event.target.value)}
+                  aria-label="Filter listing reports by status"
+                >
+                  <option>All</option>
+                  <option>pending</option>
+                  <option>Reviewed</option>
+                  <option>removed</option>
+                  <option>dismissed</option>
+                </select>
+              </div>
+            {filteredOpportunityReports.length === 0 ? (
               <div className="admin-empty">
-                <h3>No listing reports</h3>
-                <p>Reports submitted by colleges will appear here for review.</p>
+                <h3>{opportunityReports.length === 0 ? "No listing reports" : "No matching reports"}</h3>
+                <p>{opportunityReports.length === 0
+                  ? "Reports submitted by colleges will appear here for review."
+                  : "Try changing your search or report status filter."}</p>
               </div>
             ) : (
               <div className="admin-opportunity-list">
-                {[...opportunityReports]
+                {[...filteredOpportunityReports]
                   .sort((first, second) => {
                     if (first.status === "pending" && second.status !== "pending") return -1;
                     if (second.status === "pending" && first.status !== "pending") return 1;
@@ -463,6 +531,7 @@ function AdminDashboard() {
                           </span>
                         </div>
                         <p className="admin-company">{report.company}</p>
+                        {report.reportedBy && <p className="admin-report-reporter">Reported by {report.reportedBy}</p>}
                         <div className="admin-details">
                           <span>Reason: {report.reason}</span>
                           <span>Reported: {report.reportedAt ? new Date(report.reportedAt).toLocaleString() : "Date unavailable"}</span>
@@ -483,6 +552,8 @@ function AdminDashboard() {
                   ))}
               </div>
             )
+            }
+            </>
           ) : filter === "Organization Verification" ? (
             <>
               <div className="verification-review-controls">
@@ -688,6 +759,10 @@ function AdminDashboard() {
                         <span>💰 {item.salary}</span>
                       )}
 
+                      {item.stipend && (
+                        <span>Stipend: {item.stipend}</span>
+                      )}
+
                       {item.duration && (
                         <span>⏱ {item.duration}</span>
                       )}
@@ -708,6 +783,11 @@ function AdminDashboard() {
                       ) : isOpportunityExpired(item) ? (
                         <span className="admin-rejected">
                           Expired
+                        </span>
+
+                      ) : item.status === "closed" ? (
+                        <span className="admin-rejected">
+                          Closed by company
                         </span>
 
                       ) : item.status === "rejected" ? (
@@ -731,7 +811,9 @@ function AdminDashboard() {
                   <div className="admin-actions">
 
                     {!item.verified &&
-                      item.status !== "rejected" && (
+                      item.status !== "rejected" &&
+                      item.status !== "closed" &&
+                      !isOpportunityExpired(item) && (
                         <>
                           <button
                             className="verify-btn"

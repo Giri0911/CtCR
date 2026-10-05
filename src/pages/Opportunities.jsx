@@ -14,6 +14,15 @@ function loadSavedOpportunityIds() {
   }
 }
 
+function loadReporterName() {
+  try {
+    const profile = JSON.parse(localStorage.getItem("collegeProfile") || "{}");
+    return typeof profile.name === "string" ? profile.name.trim() : "";
+  } catch {
+    return "";
+  }
+}
+
 function Opportunities() {
   const [searchParams] = useSearchParams();
   const [opportunities] = useState(loadOpportunities);
@@ -21,7 +30,7 @@ function Opportunities() {
   const [search, setSearch] = useState("");
   const [location, setLocation] = useState("All Locations");
   const [verifiedOnly, setVerifiedOnly] = useState(true);
-  const [savedOnly, setSavedOnly] = useState(false);
+  const [savedOnly, setSavedOnly] = useState(() => searchParams.get("saved") === "true");
   const [availability, setAvailability] = useState("Active");
   const [sort, setSort] = useState("Newest");
   const [reportingOpportunityId, setReportingOpportunityId] = useState(null);
@@ -55,6 +64,7 @@ function Opportunities() {
       opportunityId: item.id,
       title: item.title,
       company: item.company,
+      reportedBy: loadReporterName(),
       reason: formData.get("reason"),
       details: String(formData.get("details") || "").trim(),
       status: "pending",
@@ -70,7 +80,7 @@ function Opportunities() {
   const reportedOpportunityIds = new Set(
     reports.filter((report) => report.status === "pending").map((report) => String(report.opportunityId))
   );
-  const locations = [...new Set(opportunities.map((item) => item.location))];
+  const locations = [...new Set(opportunities.map((item) => item.location).filter(Boolean))].sort();
   const filteredOpportunities = opportunities.filter((item) => {
     const matchesType = type === "All" || item.type === type;
     const matchesLocation = location === "All Locations" || item.location === location;
@@ -148,6 +158,18 @@ function Opportunities() {
       </section>
 
       <p className="opportunities-count">{filteredOpportunities.length} opportunities</p>
+      {savedOpportunityIds.length > 0 && (
+        <button
+          className="clear-saved-opportunities"
+          type="button"
+          onClick={() => {
+            localStorage.setItem(SAVED_OPPORTUNITIES_KEY, "[]");
+            setSavedOpportunityIds([]);
+          }}
+        >
+          Clear saved opportunities
+        </button>
+      )}
 
       {filteredOpportunities.length ? (
         <section className="opportunities-grid" aria-label="Available opportunities">
@@ -178,6 +200,7 @@ function Opportunities() {
                   <dd>{item.type === "Job" ? item.openings : item.duration}</dd>
                 </div>
                 {item.salary && <div><dt>Salary</dt><dd>{item.salary}</dd></div>}
+                {item.stipend && <div><dt>Stipend</dt><dd>{item.stipend}</dd></div>}
                 {item.expiryDate && <div><dt>Apply by</dt><dd>{item.expiryDate}</dd></div>}
               </dl>
               {item.description && <p className="opportunity-description">{item.description}</p>}

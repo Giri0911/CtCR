@@ -731,6 +731,7 @@ textarea:focus {
   height: 100vh;
   min-height: 100vh;
   padding: 27px 16px;
+  overflow-y: auto;
   background: var(--green-dark);
   box-shadow: 8px 0 24px rgba(18, 61, 59, 0.08);
 }
@@ -1947,6 +1948,189 @@ textarea:focus {
   border-left: 3px solid var(--coral);
 }
 
+.admin-report-reporter {
+  margin: -5px 0 10px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.company-form-wide-field {
+  grid-column: 1 / -1;
+}
+
+.company-form-wide-field textarea {
+  width: 100%;
+  min-height: 90px;
+  padding: 11px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  color: var(--ink);
+  font: inherit;
+  resize: vertical;
+}
+
+.company-table-header,
+.company-table-row {
+  grid-template-columns: minmax(150px, 1.8fr) minmax(110px, 1fr) minmax(70px, 0.6fr) minmax(90px, 0.8fr) minmax(110px, 1fr) minmax(130px, 1fr);
+  min-width: 850px;
+}
+
+.company-opportunity-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.company-opportunity-actions button {
+  min-height: 34px;
+  padding: 5px 9px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: white;
+  color: var(--green-dark);
+  cursor: pointer;
+  font-size: 11px;
+}
+
+.company-opportunity-actions button:hover {
+  border-color: var(--green);
+  background: var(--green-soft);
+}
+
+.opportunity-editor-overlay {
+  position: fixed;
+  z-index: 100;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(18, 37, 42, 0.58);
+}
+
+.opportunity-editor {
+  width: min(680px, 100%);
+  max-height: min(90dvh, 850px);
+  overflow-y: auto;
+  padding: 26px;
+  border: 1px solid var(--line);
+  border-top: 4px solid var(--coral);
+  border-radius: 7px;
+  background: var(--surface);
+  box-shadow: var(--shadow-soft);
+}
+
+.opportunity-editor-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+.opportunity-editor-heading p {
+  margin-bottom: 6px;
+  color: var(--coral);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+.opportunity-editor-heading h2 {
+  color: var(--ink);
+  font-size: 24px;
+}
+
+.opportunity-editor-heading span {
+  display: block;
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.opportunity-editor-heading > button {
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: white;
+  color: var(--ink);
+  cursor: pointer;
+  font-size: 24px;
+}
+
+.opportunity-editor form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 5px;
+}
+
+.opportunity-editor label {
+  margin-top: 7px;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.opportunity-editor input,
+.opportunity-editor select,
+.opportunity-editor textarea {
+  width: 100%;
+  min-width: 0;
+  min-height: 42px;
+  padding: 9px 11px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: white;
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+}
+
+.opportunity-editor textarea,
+.opportunity-editor-actions {
+  grid-column: 1;
+}
+
+.opportunity-editor textarea {
+  resize: vertical;
+}
+
+.opportunity-editor-actions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-top: 10px;
+}
+
+.opportunity-editor-actions button {
+  min-height: 42px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: white;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.opportunity-editor-actions button[type="submit"] {
+  border-color: var(--green);
+  background: var(--green);
+  color: white;
+}
+
+.clear-saved-opportunities {
+  margin: -5px 0 12px;
+  padding: 6px 0;
+  border: 0;
+  background: transparent;
+  color: var(--green);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  text-decoration: underline;
+}
+
 @media (max-width: 1100px) {
   .opportunities-filters {
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1970,6 +2154,24 @@ textarea:focus {
 @media (max-width: 520px) {
   .opportunities-filters {
     grid-template-columns: 1fr;
+  }
+
+  .opportunity-editor-overlay {
+    align-items: end;
+    padding: 8px;
+  }
+
+  .opportunity-editor {
+    max-height: 92dvh;
+    padding: 18px 15px;
+  }
+
+  .opportunity-editor-actions {
+    flex-direction: column-reverse;
+  }
+
+  .opportunity-editor-actions button {
+    width: 100%;
   }
 }
 
@@ -2001,24 +2203,22 @@ textarea:focus {
   }
 
   .admin-menu {
-    display: flex;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
-    overflow-x: auto;
+    overflow: visible;
     margin-top: 8px;
     padding-bottom: 2px;
-    overscroll-behavior-x: contain;
-    scrollbar-width: none;
-  }
-
-  .admin-menu::-webkit-scrollbar {
-    display: none;
   }
 
   .admin-menu button {
-    width: auto;
-    flex: 0 0 auto;
+    width: 100%;
     margin: 0;
-    white-space: nowrap;
+    padding: 8px 6px;
+    font-size: 11px;
+    line-height: 1.3;
+    white-space: normal;
+    text-align: center;
   }
 
   .admin-stats {
@@ -2029,5 +2229,177 @@ textarea:focus {
 @media (max-width: 380px) {
   .admin-stats {
     grid-template-columns: 1fr;
+  }
+}
+
+.college-sidebar-nav,
+.company-sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.admin-portal-links {
+  display: grid;
+  gap: 4px;
+  margin-top: 22px;
+  padding-top: 15px;
+  border-top: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.admin-portal-links p {
+  margin: 0 10px 6px;
+  color: #9bbab1;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.admin-portal-links a {
+  display: block;
+  min-height: 40px;
+  padding: 10px;
+  border-radius: 5px;
+  color: #d3e2dd;
+  font-size: 12px;
+  text-decoration: none;
+}
+
+.admin-portal-links a:hover {
+  background: rgba(255, 255, 255, 0.09);
+  color: white;
+}
+
+@media (max-width: 750px) {
+  .sidebar {
+    position: sticky;
+    z-index: 30;
+    top: 0;
+    display: block;
+    width: 100%;
+    height: auto;
+    min-height: 0;
+    padding: 10px 12px;
+  }
+
+  .dashboard-logo {
+    display: block;
+    padding: 0 8px 10px;
+    font-size: 17px;
+    text-align: left;
+  }
+
+  .dashboard-logo::before {
+    content: none;
+  }
+
+  .dashboard-logo span {
+    display: inline;
+  }
+
+  .college-sidebar-nav {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 5px 8px;
+  }
+
+  .college-sidebar-nav .menu-title {
+    display: block;
+    grid-column: 1 / -1;
+    margin: 5px 8px 0;
+    font-size: 9px;
+  }
+
+  .college-sidebar-nav a {
+    min-width: 0;
+    min-height: 42px;
+    margin: 0;
+    padding: 10px 9px;
+    overflow-wrap: anywhere;
+    font-size: 12px;
+    line-height: 1.25;
+  }
+
+  .dashboard-main {
+    width: 100%;
+    margin: 0;
+    padding: 22px 16px;
+  }
+
+  .company-sidebar {
+    position: sticky;
+    z-index: 30;
+    top: 0;
+    display: block;
+    width: 100%;
+    height: auto;
+    min-height: 0;
+    padding: 10px 12px;
+    overflow: visible;
+  }
+
+  .company-dashboard-logo {
+    padding: 0 8px 10px;
+    font-size: 17px;
+    text-align: left;
+  }
+
+  .company-dashboard-logo::before {
+    content: none;
+  }
+
+  .company-dashboard-logo span {
+    display: inline;
+  }
+
+  .company-sidebar-nav {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 5px 8px;
+  }
+
+  .company-sidebar .company-menu-title {
+    display: block;
+    grid-column: 1 / -1;
+    margin: 5px 8px 0;
+    font-size: 9px;
+  }
+
+  .company-sidebar-nav a {
+    min-width: 0;
+    min-height: 42px;
+    margin: 0;
+    padding: 10px 9px;
+    overflow-wrap: anywhere;
+    font-size: 12px;
+    line-height: 1.25;
+  }
+
+  .company-dashboard-main {
+    width: 100%;
+    margin: 0;
+    padding: 22px 16px;
+  }
+
+  .admin-portal-links {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 5px 8px;
+    margin-top: 10px;
+    padding-top: 10px;
+  }
+
+  .admin-portal-links p {
+    grid-column: 1 / -1;
+    margin: 0 8px 2px;
+  }
+
+  .admin-portal-links a {
+    min-width: 0;
+    min-height: 40px;
+    padding: 9px 6px;
+    font-size: 11px;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+    text-align: center;
   }
 }

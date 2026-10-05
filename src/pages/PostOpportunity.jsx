@@ -30,6 +30,7 @@ function PostOpportunity() {
     mode: "Full Time",
     openings: "",
     salary: "",
+    stipend: "",
     duration: "",
     description: "",
     eligibility: "",
@@ -74,7 +75,7 @@ function PostOpportunity() {
 
       ...(form.type === "Job"
         ? { salary: form.salary }
-        : { duration: form.duration })
+        : { duration: form.duration, stipend: form.stipend })
 
     };
 
@@ -283,6 +284,18 @@ function PostOpportunity() {
                 value={form.duration}
                 onChange={handleChange}
                 required
+              />
+
+              <label htmlFor="opportunity-stipend">
+                Stipend <span>(optional)</span>
+              </label>
+              <input
+                id="opportunity-stipend"
+                type="text"
+                name="stipend"
+                placeholder="Example: ₹10,000 per month"
+                value={form.stipend}
+                onChange={handleChange}
               />
             </>
 

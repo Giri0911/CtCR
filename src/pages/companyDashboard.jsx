@@ -6,6 +6,7 @@ import { loadVerificationRequests, saveVerificationRequests } from "../Data/veri
 import { MAX_VERIFICATION_DOCUMENTS, MAX_VERIFICATION_DOCUMENT_SIZE, readVerificationDocument } from "../Data/verificationRequests.js";
 import NotificationCenter from "../components/NotificationCenter.jsx";
 import DriveRequestTimeline from "../components/DriveRequestTimeline.jsx";
+import OpportunityEditor from "../components/OpportunityEditor.jsx";
 
 const companyName = "TechNova Technologies";
 const defaultCompanyProfile = {
@@ -44,6 +45,8 @@ function getCompanyItems(type, activeCompanyName) {
       type: type === "Job" ? item.mode : item.type,
       status: isOpportunityExpired(item)
         ? "Expired"
+        : item.status === "closed"
+          ? "Closed"
         : item.status === "rejected"
           ? "Rejected"
           : item.verified
@@ -61,6 +64,8 @@ function CompanyDashboard() {
   );
   const [showJobForm, setShowJobForm] = useState(false);
   const [showInternshipForm, setShowInternshipForm] = useState(false);
+  const [editingOpportunity, setEditingOpportunity] = useState(null);
+  const [opportunityFeedback, setOpportunityFeedback] = useState("");
   const [companyProfile, setCompanyProfile] = useState(loadCompanyProfile);
   const [companyProfileForm, setCompanyProfileForm] = useState(loadCompanyProfile);
   const [editingCompanyProfile, setEditingCompanyProfile] = useState(() => !loadCompanyProfile().email);
@@ -106,14 +111,24 @@ function CompanyDashboard() {
     location: "",
     openings: "",
     type: "Full Time",
-    expiryDate: getDefaultExpiryDate()
+    expiryDate: getDefaultExpiryDate(),
+    salary: "",
+    description: "",
+    eligibility: "",
+    skills: ""
   });
 
   const [internship, setInternship] = useState({
     title: "",
     duration: "",
     mode: "Online",
-    expiryDate: getDefaultExpiryDate()
+    expiryDate: getDefaultExpiryDate(),
+    location: companyProfile.location?.split(",")[0] || "Guntur",
+    openings: "1",
+    stipend: "",
+    description: "",
+    eligibility: "",
+    skills: ""
   });
 
   const addJob = (e) => {
@@ -127,6 +142,10 @@ function CompanyDashboard() {
       location: job.location,
       openings: Number(job.openings),
       expiryDate: job.expiryDate,
+      salary: job.salary.trim(),
+      description: job.description.trim(),
+      eligibility: job.eligibility.trim(),
+      skills: job.skills.split(",").map((skill) => skill.trim()).filter(Boolean),
       mode: job.type,
       verified: false,
       status: "pending"
@@ -144,7 +163,11 @@ function CompanyDashboard() {
       location: "",
       openings: "",
       type: "Full Time",
-      expiryDate: getDefaultExpiryDate()
+      expiryDate: getDefaultExpiryDate(),
+      salary: "",
+      description: "",
+      eligibility: "",
+      skills: ""
     });
 
     setShowJobForm(false);
@@ -158,11 +181,15 @@ function CompanyDashboard() {
       type: "Internship",
       title: internship.title,
       company: companyProfile.name,
-      location: "Guntur",
-      openings: 1,
+      location: internship.location.trim(),
+      openings: Number(internship.openings),
       duration: internship.duration,
       expiryDate: internship.expiryDate,
       mode: internship.mode,
+      stipend: internship.stipend.trim(),
+      description: internship.description.trim(),
+      eligibility: internship.eligibility.trim(),
+      skills: internship.skills.split(",").map((skill) => skill.trim()).filter(Boolean),
       verified: false,
       status: "pending"
     };
@@ -177,10 +204,82 @@ function CompanyDashboard() {
       title: "",
       duration: "",
       mode: "Online",
-      expiryDate: getDefaultExpiryDate()
+      expiryDate: getDefaultExpiryDate(),
+      location: companyProfile.location?.split(",")[0] || "Guntur",
+      openings: "1",
+      stipend: "",
+      description: "",
+      eligibility: "",
+      skills: ""
     });
 
     setShowInternshipForm(false);
+  };
+
+  const refreshCompanyOpportunities = (updatedOpportunities) => {
+    saveOpportunities(updatedOpportunities);
+    setJobs(getCompanyItems("Job", companyProfile.name));
+    setInternships(getCompanyItems("Internship", companyProfile.name));
+  };
+
+  const saveEditedOpportunity = (updatedOpportunity) => {
+    const allOpportunities = loadOpportunities();
+    const existingOpportunity = allOpportunities.find(
+      (item) => item.id === updatedOpportunity.id && item.company === companyProfile.name
+    );
+    if (!existingOpportunity) {
+      setOpportunityFeedback("This opportunity could not be found in your company listings. Refresh and try again.");
+      setEditingOpportunity(null);
+      return;
+    }
+
+    refreshCompanyOpportunities(allOpportunities.map((item) =>
+      item.id === updatedOpportunity.id && item.company === companyProfile.name
+        ? updatedOpportunity
+        : item
+    ));
+    setEditingOpportunity(null);
+    setOpportunityFeedback("Opportunity updated and submitted for verification.");
+  };
+
+  const openOpportunityEditor = (opportunityId) => {
+    const opportunity = loadOpportunities().find(
+      (item) => item.id === opportunityId && item.company === companyProfile.name
+    );
+    if (!opportunity) {
+      setOpportunityFeedback("This opportunity could not be found in your company listings. Refresh and try again.");
+      return;
+    }
+    setOpportunityFeedback("");
+    setEditingOpportunity(opportunity);
+  };
+
+  const updateOpportunityStatus = (opportunityId, status) => {
+    const allOpportunities = loadOpportunities();
+    const existingOpportunity = allOpportunities.find(
+      (item) => item.id === opportunityId && item.company === companyProfile.name
+    );
+    if (!existingOpportunity) {
+      setOpportunityFeedback("This opportunity could not be found in your company listings. Refresh and try again.");
+      return;
+    }
+
+    const updated = allOpportunities.map((item) =>
+      item.id === opportunityId && item.company === companyProfile.name
+        ? {
+            ...item,
+            status,
+            verified: false,
+            updatedAt: new Date().toISOString()
+          }
+        : item
+    );
+    refreshCompanyOpportunities(updated);
+    setOpportunityFeedback(
+      status === "closed"
+        ? "Opportunity closed and removed from active college searches."
+        : "Opportunity reopened and submitted for verification."
+    );
   };
 
   const updateDriveRequest = (requestId, status) => {
@@ -323,37 +422,47 @@ function CompanyDashboard() {
           Campus<span>Connect</span>
         </div>
 
-        <p className="company-menu-title">MAIN MENU</p>
+        <nav className="company-sidebar-nav" aria-label="Company navigation">
+          <p className="company-menu-title">MAIN MENU</p>
 
-        <Link className={!showingProfile && !showingDriveRequests ? "company-active-menu" : ""} to="/company">
-          Dashboard
-        </Link>
+          <Link className={!showingProfile && !showingDriveRequests ? "company-active-menu" : ""} to="/company">
+            Dashboard
+          </Link>
 
-        <Link to="#job-vacancies">
-          Job Vacancies
-        </Link>
+          <Link to="/company#job-vacancies">
+            Job Vacancies
+          </Link>
 
-        <Link to="#internships">
-          Internships
-        </Link>
+          <Link to="/company#internships">
+            Internships
+          </Link>
 
-        <Link className={showingDriveRequests ? "company-active-menu" : ""} to="#drive-requests">
-          Drive Requests
-        </Link>
+          <Link className={showingDriveRequests ? "company-active-menu" : ""} to="/company#drive-requests">
+            Drive Requests
+          </Link>
 
-        <Link to="/company/opportunities/new">
-          Post an Opportunity
-        </Link>
+          <Link to="/company/opportunities/new">
+            Post an Opportunity
+          </Link>
 
-        <p className="company-menu-title">ACCOUNT</p>
+          <Link to="/opportunities">
+            Browse Opportunities
+          </Link>
 
-        <Link className={showingProfile ? "company-active-menu" : ""} to="#company-profile">
-          Company Profile
-        </Link>
+          <Link to="/college/companies">
+            Company Directory
+          </Link>
 
-        <Link to="/">
-          Logout
-        </Link>
+          <p className="company-menu-title">ACCOUNT</p>
+
+          <Link className={showingProfile ? "company-active-menu" : ""} to="/company#company-profile">
+            Company Profile
+          </Link>
+
+          <Link to="/">
+            Logout
+          </Link>
+        </nav>
 
       </aside>
 
@@ -624,7 +733,7 @@ function CompanyDashboard() {
           <div className="company-stat-card">
 
             <span>Active Jobs</span>
-            <strong>{jobs.filter((item) => item.verified).length}</strong>
+            <strong>{jobs.filter((item) => item.verified && !isOpportunityExpired(item)).length}</strong>
             <small>Verified and live</small>
 
           </div>
@@ -632,7 +741,7 @@ function CompanyDashboard() {
           <div className="company-stat-card">
 
             <span>Live Internships</span>
-            <strong>{internships.filter((item) => item.verified).length}</strong>
+            <strong>{internships.filter((item) => item.verified && !isOpportunityExpired(item)).length}</strong>
             <small>Verified and live</small>
 
           </div>
@@ -779,9 +888,10 @@ function CompanyDashboard() {
               <div className="form-grid">
 
                 <div>
-                  <label>Job Title</label>
+                  <label htmlFor="company-job-title">Job Title</label>
 
                   <input
+                    id="company-job-title"
                     type="text"
                     placeholder="Example: Frontend Developer"
                     value={job.title}
@@ -796,9 +906,10 @@ function CompanyDashboard() {
                 </div>
 
                 <div>
-                  <label>Location</label>
+                  <label htmlFor="company-job-location">Location</label>
 
                   <input
+                    id="company-job-location"
                     type="text"
                     placeholder="Example: Guntur"
                     value={job.location}
@@ -813,9 +924,10 @@ function CompanyDashboard() {
                 </div>
 
                 <div>
-                  <label>Number of Openings</label>
+                  <label htmlFor="company-job-openings">Number of Openings</label>
 
                   <input
+                    id="company-job-openings"
                     type="number"
                     placeholder="Example: 5"
                     min="1"
@@ -831,9 +943,10 @@ function CompanyDashboard() {
                 </div>
 
                 <div>
-                  <label>Job Type</label>
+                  <label htmlFor="company-job-type">Job Type</label>
 
                   <select
+                    id="company-job-type"
                     value={job.type}
                     onChange={(e) =>
                       setJob({
@@ -850,12 +963,59 @@ function CompanyDashboard() {
                 </div>
 
                 <div>
-                  <label>Apply By</label>
+                  <label htmlFor="company-job-expiry">Apply By</label>
                   <input
+                    id="company-job-expiry"
                     type="date"
                     min={new Date().toLocaleDateString("en-CA")}
                     value={job.expiryDate}
                     onChange={(e) => setJob({ ...job, expiryDate: e.target.value })}
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="company-job-salary">Salary</label>
+                  <input
+                    id="company-job-salary"
+                    type="text"
+                    placeholder="Example: ₹4 - ₹7 LPA"
+                    value={job.salary}
+                    onChange={(e) => setJob({ ...job, salary: e.target.value })}
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="company-job-skills">Skills (comma-separated)</label>
+                  <input
+                    id="company-job-skills"
+                    type="text"
+                    placeholder="Example: React, JavaScript, SQL"
+                    value={job.skills}
+                    onChange={(e) => setJob({ ...job, skills: e.target.value })}
+                  />
+                </div>
+
+                <div className="company-form-wide-field">
+                  <label htmlFor="company-job-eligibility">Eligibility</label>
+                  <input
+                    id="company-job-eligibility"
+                    type="text"
+                    placeholder="Example: Final-year CS students"
+                    value={job.eligibility}
+                    onChange={(e) => setJob({ ...job, eligibility: e.target.value })}
+                  />
+                </div>
+
+                <div className="company-form-wide-field">
+                  <label htmlFor="company-job-description">Role description</label>
+                  <textarea
+                    id="company-job-description"
+                    rows="3"
+                    maxLength="1200"
+                    value={job.description}
+                    onChange={(e) => setJob({ ...job, description: e.target.value })}
                     required
                   />
                 </div>
@@ -876,6 +1036,13 @@ function CompanyDashboard() {
         )}
 
         {/* Internship Form */}
+
+        {opportunityFeedback && (
+          <div className="opportunity-submission-notice" role="status">
+            <div><strong>Opportunity update</strong><span>{opportunityFeedback}</span></div>
+            <button type="button" aria-label="Dismiss opportunity update" onClick={() => setOpportunityFeedback("")}>×</button>
+          </div>
+        )}
 
         {showInternshipForm && (
 
@@ -906,9 +1073,10 @@ function CompanyDashboard() {
               <div className="form-grid">
 
                 <div>
-                  <label>Internship Title</label>
+                  <label htmlFor="company-internship-title">Internship Title</label>
 
                   <input
+                    id="company-internship-title"
                     type="text"
                     placeholder="Example: Web Development Intern"
                     value={internship.title}
@@ -923,9 +1091,10 @@ function CompanyDashboard() {
                 </div>
 
                 <div>
-                  <label>Duration</label>
+                  <label htmlFor="company-internship-duration">Duration</label>
 
                   <select
+                    id="company-internship-duration"
                     value={internship.duration}
                     onChange={(e) =>
                       setInternship({
@@ -946,9 +1115,10 @@ function CompanyDashboard() {
                 </div>
 
                 <div>
-                  <label>Work Mode</label>
+                  <label htmlFor="company-internship-mode">Work Mode</label>
 
                   <select
+                    id="company-internship-mode"
                     value={internship.mode}
                     onChange={(e) =>
                       setInternship({
@@ -964,12 +1134,82 @@ function CompanyDashboard() {
                 </div>
 
                 <div>
-                  <label>Apply By</label>
+                  <label htmlFor="company-internship-location">Location</label>
                   <input
+                    id="company-internship-location"
+                    type="text"
+                    value={internship.location}
+                    onChange={(e) => setInternship({ ...internship, location: e.target.value })}
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="company-internship-openings">Number of Openings</label>
+                  <input
+                    id="company-internship-openings"
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={internship.openings}
+                    onChange={(e) => setInternship({ ...internship, openings: e.target.value })}
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="company-internship-expiry">Apply By</label>
+                  <input
+                    id="company-internship-expiry"
                     type="date"
                     min={new Date().toLocaleDateString("en-CA")}
                     value={internship.expiryDate}
                     onChange={(e) => setInternship({ ...internship, expiryDate: e.target.value })}
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="company-internship-stipend">Stipend (optional)</label>
+                  <input
+                    id="company-internship-stipend"
+                    type="text"
+                    placeholder="Example: ₹10,000 per month"
+                    value={internship.stipend}
+                    onChange={(e) => setInternship({ ...internship, stipend: e.target.value })}
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="company-internship-skills">Skills (comma-separated)</label>
+                  <input
+                    id="company-internship-skills"
+                    type="text"
+                    placeholder="Example: Python, SQL, Excel"
+                    value={internship.skills}
+                    onChange={(e) => setInternship({ ...internship, skills: e.target.value })}
+                  />
+                </div>
+
+                <div className="company-form-wide-field">
+                  <label htmlFor="company-internship-eligibility">Eligibility</label>
+                  <input
+                    id="company-internship-eligibility"
+                    type="text"
+                    placeholder="Example: Students pursuing a data degree"
+                    value={internship.eligibility}
+                    onChange={(e) => setInternship({ ...internship, eligibility: e.target.value })}
+                  />
+                </div>
+
+                <div className="company-form-wide-field">
+                  <label htmlFor="company-internship-description">Internship description</label>
+                  <textarea
+                    id="company-internship-description"
+                    rows="3"
+                    maxLength="1200"
+                    value={internship.description}
+                    onChange={(e) => setInternship({ ...internship, description: e.target.value })}
                     required
                   />
                 </div>
@@ -1032,6 +1272,7 @@ function CompanyDashboard() {
               <span>Openings</span>
               <span>Type</span>
               <span>Status</span>
+              <span>Actions</span>
 
             </div>
 
@@ -1054,6 +1295,19 @@ function CompanyDashboard() {
                   {item.status}
                   {item.expiryDate && <small className="company-opportunity-expiry">Apply by {item.expiryDate}</small>}
                 </span>
+                <div className="company-opportunity-actions">
+                  <button
+                    type="button"
+                    onClick={() => openOpportunityEditor(item.id)}
+                  >
+                    Edit
+                  </button>
+                  {item.status === "Closed" ? (
+                    <button type="button" onClick={() => updateOpportunityStatus(item.id, "pending")}>Reopen</button>
+                  ) : item.status !== "Rejected" ? (
+                    <button type="button" onClick={() => updateOpportunityStatus(item.id, "closed")}>Close</button>
+                  ) : null}
+                </div>
 
               </div>
 
@@ -1097,6 +1351,7 @@ function CompanyDashboard() {
               <span>Mode</span>
               <span>Status</span>
               <span>Verification</span>
+              <span>Actions</span>
 
             </div>
 
@@ -1121,6 +1376,19 @@ function CompanyDashboard() {
                 <span className="internship-verification">
                   {item.status}
                 </span>
+                <div className="company-opportunity-actions">
+                  <button
+                    type="button"
+                    onClick={() => openOpportunityEditor(item.id)}
+                  >
+                    Edit
+                  </button>
+                  {item.status === "Closed" ? (
+                    <button type="button" onClick={() => updateOpportunityStatus(item.id, "pending")}>Reopen</button>
+                  ) : item.status !== "Rejected" ? (
+                    <button type="button" onClick={() => updateOpportunityStatus(item.id, "closed")}>Close</button>
+                  ) : null}
+                </div>
 
               </div>
 
@@ -1131,6 +1399,15 @@ function CompanyDashboard() {
         </section>
 
       </main>
+
+      {editingOpportunity && (
+        <OpportunityEditor
+          key={editingOpportunity.id}
+          opportunity={editingOpportunity}
+          onClose={() => setEditingOpportunity(null)}
+          onSave={saveEditedOpportunity}
+        />
+      )}
 
     </div>
   );
