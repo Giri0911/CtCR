@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { loadOpportunities } from "./Data/opportunities.js";
+import { isOpportunityActive, loadOpportunities } from "./Data/opportunities.js";
 
 function CompanyDirectory() {
 
@@ -76,7 +76,7 @@ function CompanyDirectory() {
         (item) =>
           item.company === selectedCompany.name &&
           item.verified &&
-          item.status !== "rejected"
+          isOpportunityActive(item)
       )
     : [];
 
@@ -258,7 +258,7 @@ function CompanyDirectory() {
                 <div>
                   <strong>
                     {opportunities.filter(
-                      (item) => item.company === company.name && item.type === "Job" && item.verified
+                      (item) => item.company === company.name && item.type === "Job" && item.verified && isOpportunityActive(item)
                     ).length}
                   </strong>
                   <span>Jobs</span>
@@ -267,7 +267,7 @@ function CompanyDirectory() {
                 <div>
                   <strong>
                     {opportunities.filter(
-                      (item) => item.company === company.name && item.type === "Internship" && item.verified
+                      (item) => item.company === company.name && item.type === "Internship" && item.verified && isOpportunityActive(item)
                     ).length}
                   </strong>
                   <span>Internships</span>

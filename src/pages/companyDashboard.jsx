@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { loadOpportunities, saveOpportunities } from "../Data/opportunities.js";
+import { isOpportunityExpired, loadOpportunities, saveOpportunities } from "../Data/opportunities.js";
 import { loadDriveRequests, saveDriveRequests } from "../Data/driveRequests.js";
 import { loadVerificationRequests, saveVerificationRequests } from "../Data/verificationRequests.js";
 import { MAX_VERIFICATION_DOCUMENTS, MAX_VERIFICATION_DOCUMENT_SIZE, readVerificationDocument } from "../Data/verificationRequests.js";
@@ -29,17 +29,26 @@ function loadCompanyProfile() {
   }
 }
 
+function getDefaultExpiryDate() {
+  const date = new Date();
+  date.setDate(date.getDate() + 30);
+  const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60_000);
+  return localDate.toISOString().slice(0, 10);
+}
+
 function getCompanyItems(type, activeCompanyName) {
   return loadOpportunities()
     .filter((item) => item.company === activeCompanyName && item.type === type)
     .map((item) => ({
       ...item,
       type: type === "Job" ? item.mode : item.type,
-      status: item.status === "rejected"
-        ? "Rejected"
-        : item.verified
-          ? "Verified"
-          : "Under Review"
+      status: isOpportunityExpired(item)
+        ? "Expired"
+        : item.status === "rejected"
+          ? "Rejected"
+          : item.verified
+            ? "Verified"
+            : "Under Review"
     }));
 }
 
@@ -96,13 +105,15 @@ function CompanyDashboard() {
     title: "",
     location: "",
     openings: "",
-    type: "Full Time"
+    type: "Full Time",
+    expiryDate: getDefaultExpiryDate()
   });
 
   const [internship, setInternship] = useState({
     title: "",
     duration: "",
-    mode: "Online"
+    mode: "Online",
+    expiryDate: getDefaultExpiryDate()
   });
 
   const addJob = (e) => {
@@ -115,6 +126,7 @@ function CompanyDashboard() {
       company: companyProfile.name,
       location: job.location,
       openings: Number(job.openings),
+      expiryDate: job.expiryDate,
       mode: job.type,
       verified: false,
       status: "pending"
@@ -131,7 +143,8 @@ function CompanyDashboard() {
       title: "",
       location: "",
       openings: "",
-      type: "Full Time"
+      type: "Full Time",
+      expiryDate: getDefaultExpiryDate()
     });
 
     setShowJobForm(false);
@@ -148,6 +161,7 @@ function CompanyDashboard() {
       location: "Guntur",
       openings: 1,
       duration: internship.duration,
+      expiryDate: internship.expiryDate,
       mode: internship.mode,
       verified: false,
       status: "pending"
@@ -162,7 +176,8 @@ function CompanyDashboard() {
     setInternship({
       title: "",
       duration: "",
-      mode: "Online"
+      mode: "Online",
+      expiryDate: getDefaultExpiryDate()
     });
 
     setShowInternshipForm(false);
@@ -834,6 +849,17 @@ function CompanyDashboard() {
                   </select>
                 </div>
 
+                <div>
+                  <label>Apply By</label>
+                  <input
+                    type="date"
+                    min={new Date().toLocaleDateString("en-CA")}
+                    value={job.expiryDate}
+                    onChange={(e) => setJob({ ...job, expiryDate: e.target.value })}
+                    required
+                  />
+                </div>
+
               </div>
 
               <button
@@ -937,6 +963,17 @@ function CompanyDashboard() {
                   </select>
                 </div>
 
+                <div>
+                  <label>Apply By</label>
+                  <input
+                    type="date"
+                    min={new Date().toLocaleDateString("en-CA")}
+                    value={internship.expiryDate}
+                    onChange={(e) => setInternship({ ...internship, expiryDate: e.target.value })}
+                    required
+                  />
+                </div>
+
               </div>
 
               <div className="verification-note">
@@ -1015,6 +1052,7 @@ function CompanyDashboard() {
 
                 <span className="company-active-status">
                   {item.status}
+                  {item.expiryDate && <small className="company-opportunity-expiry">Apply by {item.expiryDate}</small>}
                 </span>
 
               </div>
@@ -1076,7 +1114,8 @@ function CompanyDashboard() {
                 <span>{item.mode}</span>
 
                 <span className="company-active-status">
-                  {item.verified ? "Active" : "Under Review"}
+                  {isOpportunityExpired(item) ? "Expired" : item.verified ? "Active" : "Under Review"}
+                  {item.expiryDate && <small className="company-opportunity-expiry">Apply by {item.expiryDate}</small>}
                 </span>
 
                 <span className="internship-verification">

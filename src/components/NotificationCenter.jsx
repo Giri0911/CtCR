@@ -30,8 +30,11 @@ function NotificationCenter({ notifications, label = "Notifications" }) {
             <p className="notification-empty">No notification</p>
           ) : (
             <div className="notification-list">
-              {safeNotifications.map((notification) => (
-                <article className={`notification-item notification-${notification.tone || "info"}`} key={notification.id || notification.title || Math.random()}>
+              {safeNotifications.map((notification, index) => (
+                <article
+                  className={`notification-item notification-${notification.tone || "info"}`}
+                  key={notification.id || `${notification.title || "update"}-${index}`}
+                >
                   <div>
                     <strong>{notification.title || "New update"}</strong>
                     <p>{notification.message || "No details available."}</p>

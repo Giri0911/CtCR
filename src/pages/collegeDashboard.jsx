@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import "../App.css";
 import { loadDriveRequests, saveDriveRequests } from "../Data/driveRequests.js";
-import { loadOpportunities } from "../Data/opportunities.js";
+import { isOpportunityActive, loadOpportunities } from "../Data/opportunities.js";
 import { loadVerificationRequests, saveVerificationRequests } from "../Data/verificationRequests.js";
 import { MAX_VERIFICATION_DOCUMENTS, MAX_VERIFICATION_DOCUMENT_SIZE, readVerificationDocument } from "../Data/verificationRequests.js";
 import NotificationCenter from "../components/NotificationCenter.jsx";
@@ -62,7 +62,7 @@ function CollegeDashboard() {
   const verificationStatus = latestVerificationRequest?.status || profile.verificationStatus || "not_submitted";
   const opportunities = loadOpportunities();
   const verifiedOpportunities = opportunities.filter(
-    (item) => item.verified && item.status !== "rejected"
+    (item) => item.verified && isOpportunityActive(item)
   );
 
   const companies = [

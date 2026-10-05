@@ -747,6 +747,8 @@ textarea:focus {
 
 .admin-main {
   min-width: 0;
+  width: auto;
+  margin: 0;
   padding: 36px;
 }
 
@@ -1498,6 +1500,10 @@ textarea:focus {
   .admin-stats {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .admin-stats > :last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
 }
 
 @media (max-width: 520px) {
@@ -1828,5 +1834,200 @@ textarea:focus {
   .verification-form-error,
   .verification-document-list {
     grid-column: 1;
+  }
+}
+
+.opportunities-filters {
+  grid-template-columns: minmax(220px, 1fr) repeat(4, minmax(120px, 150px)) auto auto;
+}
+
+.post-opportunity-box textarea {
+  width: 100%;
+  min-height: 100px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  color: var(--ink);
+  font: inherit;
+  resize: vertical;
+}
+
+.opportunity-description {
+  margin: 14px 0 8px;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.opportunity-eligibility {
+  margin: 8px 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.opportunity-skills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin: 12px 0;
+}
+
+.opportunity-skills span {
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: var(--green-soft);
+  color: var(--green-dark);
+  font-size: 12px;
+}
+
+.opportunity-report-actions {
+  margin-top: 14px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.report-opportunity-button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #a24d32;
+  cursor: pointer;
+  font: inherit;
+  text-decoration: underline;
+}
+
+.opportunity-report-form {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #f8fbfb;
+}
+
+.opportunity-report-form > select,
+.opportunity-report-form > textarea {
+  width: 100%;
+  padding: 9px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  font: inherit;
+}
+
+.opportunity-report-form > div {
+  display: flex;
+  gap: 8px;
+}
+
+.opportunity-report-form button {
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--green);
+  border-radius: 5px;
+  background: var(--green);
+  color: white;
+  cursor: pointer;
+}
+
+.opportunity-report-form button[type="button"] {
+  border-color: var(--line);
+  background: white;
+  color: var(--ink);
+}
+
+.company-opportunity-expiry {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 400;
+}
+
+.admin-report-card {
+  border-left: 3px solid var(--coral);
+}
+
+@media (max-width: 1100px) {
+  .opportunities-filters {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .opportunities-filters > input {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 750px) {
+  .opportunities-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .opportunities-filters > input {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 520px) {
+  .opportunities-filters {
+    grid-template-columns: 1fr;
+  }
+}
+
+.admin-stats {
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+}
+
+@media (max-width: 750px) {
+  .admin-logo {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 0 8px 10px;
+    text-align: left;
+  }
+
+  .admin-logo::before {
+    content: none;
+  }
+
+  .admin-logo h2 {
+    margin: 0;
+    font-size: 17px;
+  }
+
+  .admin-logo p {
+    font-size: 11px;
+  }
+
+  .admin-menu {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    margin-top: 8px;
+    padding-bottom: 2px;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+  }
+
+  .admin-menu::-webkit-scrollbar {
+    display: none;
+  }
+
+  .admin-menu button {
+    width: auto;
+    flex: 0 0 auto;
+    margin: 0;
+    white-space: nowrap;
+  }
+
+  .admin-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 380px) {
+  .admin-stats {
+    grid-template-columns: 1fr;
   }
 }

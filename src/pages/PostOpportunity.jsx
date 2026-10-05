@@ -2,6 +2,13 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { loadOpportunities, saveOpportunities } from "../Data/opportunities.js";
 
+function getDefaultExpiryDate() {
+  const date = new Date();
+  date.setDate(date.getDate() + 30);
+  const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60_000);
+  return localDate.toISOString().slice(0, 10);
+}
+
 function loadCompanyProfile() {
   try {
     return JSON.parse(localStorage.getItem("companyProfile") || "{}");
@@ -23,7 +30,11 @@ function PostOpportunity() {
     mode: "Full Time",
     openings: "",
     salary: "",
-    duration: ""
+    duration: "",
+    description: "",
+    eligibility: "",
+    skills: "",
+    expiryDate: getDefaultExpiryDate()
   });
 
   const handleChange = (e) => {
@@ -54,7 +65,10 @@ function PostOpportunity() {
       mode: form.mode,
 
       openings: Number(form.openings),
-
+      description: form.description.trim(),
+      eligibility: form.eligibility.trim(),
+      skills: form.skills.split(",").map((skill) => skill.trim()).filter(Boolean),
+      expiryDate: form.expiryDate,
       verified: false,
       status: "pending",
 
@@ -156,6 +170,44 @@ function PostOpportunity() {
             required
           />
 
+          <label htmlFor="opportunity-description">
+            Opportunity Description
+          </label>
+          <textarea
+            id="opportunity-description"
+            name="description"
+            placeholder="Describe the role, responsibilities, and what the candidate will work on."
+            value={form.description}
+            onChange={handleChange}
+            rows="4"
+            maxLength="1200"
+            required
+          />
+
+          <label htmlFor="opportunity-eligibility">
+            Eligibility
+          </label>
+          <input
+            id="opportunity-eligibility"
+            type="text"
+            name="eligibility"
+            placeholder="Example: Final-year CS students"
+            value={form.eligibility}
+            onChange={handleChange}
+          />
+
+          <label htmlFor="opportunity-skills">
+            Skills <span>(separate with commas)</span>
+          </label>
+          <input
+            id="opportunity-skills"
+            type="text"
+            name="skills"
+            placeholder="Example: React, JavaScript, SQL"
+            value={form.skills}
+            onChange={handleChange}
+          />
+
           <label>
             Work Mode
           </label>
@@ -235,6 +287,19 @@ function PostOpportunity() {
             </>
 
           )}
+
+          <label htmlFor="opportunity-expiry">
+            Apply By
+          </label>
+          <input
+            id="opportunity-expiry"
+            type="date"
+            name="expiryDate"
+            min={new Date().toLocaleDateString("en-CA")}
+            value={form.expiryDate}
+            onChange={handleChange}
+            required
+          />
 
           <button type="submit">
             Submit Opportunity

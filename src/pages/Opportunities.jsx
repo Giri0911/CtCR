@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { loadOpportunities } from "../Data/opportunities.js";
+import { isOpportunityActive, isOpportunityExpired, loadOpportunities } from "../Data/opportunities.js";
+import { loadOpportunityReports, saveOpportunityReports } from "../Data/opportunityReports.js";
 
 const SAVED_OPPORTUNITIES_KEY = "savedOpportunities";
 
@@ -21,7 +22,21 @@ function Opportunities() {
   const [location, setLocation] = useState("All Locations");
   const [verifiedOnly, setVerifiedOnly] = useState(true);
   const [savedOnly, setSavedOnly] = useState(false);
+  const [availability, setAvailability] = useState("Active");
+  const [sort, setSort] = useState("Newest");
+  const [reportingOpportunityId, setReportingOpportunityId] = useState(null);
+  const [reportFeedback, setReportFeedback] = useState({});
+  const [reports, setReports] = useState(loadOpportunityReports);
   const [savedOpportunityIds, setSavedOpportunityIds] = useState(loadSavedOpportunityIds);
+
+  const today = new Date();
+  const isExpiringSoon = (item) => {
+    if (!item.expiryDate || isOpportunityExpired(item, today)) return false;
+    const daysRemaining = Math.ceil(
+      (new Date(`${item.expiryDate}T23:59:59`).getTime() - today.getTime()) / 86_400_000
+    );
+    return daysRemaining <= 7;
+  };
 
   const toggleSavedOpportunity = (opportunityId) => {
     const id = String(opportunityId);
@@ -32,6 +47,29 @@ function Opportunities() {
     setSavedOpportunityIds(nextSavedIds);
   };
 
+  const submitReport = (event, item) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    const report = {
+      id: Date.now(),
+      opportunityId: item.id,
+      title: item.title,
+      company: item.company,
+      reason: formData.get("reason"),
+      details: String(formData.get("details") || "").trim(),
+      status: "pending",
+      reportedAt: new Date().toISOString()
+    };
+    const updatedReports = [...reports, report];
+    saveOpportunityReports(updatedReports);
+    setReports(updatedReports);
+    setReportingOpportunityId(null);
+    setReportFeedback((current) => ({ ...current, [item.id]: "Thanks. This listing was sent to the review team." }));
+  };
+
+  const reportedOpportunityIds = new Set(
+    reports.filter((report) => report.status === "pending").map((report) => String(report.opportunityId))
+  );
   const locations = [...new Set(opportunities.map((item) => item.location))];
   const filteredOpportunities = opportunities.filter((item) => {
     const matchesType = type === "All" || item.type === type;
@@ -39,12 +77,19 @@ function Opportunities() {
     const query = search.trim().toLowerCase();
     const matchesSearch =
       !query ||
-      `${item.title} ${item.company} ${item.location}`.toLowerCase().includes(query);
+      `${item.title} ${item.company} ${item.location} ${item.description || ""} ${item.eligibility || ""} ${(item.skills || []).join(" ")}`.toLowerCase().includes(query);
     const matchesVerification =
-      item.status !== "rejected" && (!verifiedOnly || item.verified);
+      isOpportunityActive(item, today) && (!verifiedOnly || item.verified);
     const matchesSaved = !savedOnly || savedOpportunityIds.includes(String(item.id));
+    const matchesAvailability =
+      availability === "Expiring soon" ? isExpiringSoon(item) : !isOpportunityExpired(item, today);
 
-    return matchesType && matchesLocation && matchesSearch && matchesVerification && matchesSaved;
+    return matchesType && matchesLocation && matchesSearch && matchesVerification && matchesSaved && matchesAvailability;
+  }).sort((first, second) => {
+    if (sort === "Closing soon") {
+      return (first.expiryDate || "9999-12-31").localeCompare(second.expiryDate || "9999-12-31");
+    }
+    return Number(second.id) - Number(first.id);
   });
 
   return (
@@ -75,6 +120,14 @@ function Opportunities() {
           {locations.map((itemLocation) => (
             <option key={itemLocation}>{itemLocation}</option>
           ))}
+        </select>
+        <select value={availability} onChange={(event) => setAvailability(event.target.value)} aria-label="Filter by deadline">
+          <option>Active</option>
+          <option>Expiring soon</option>
+        </select>
+        <select value={sort} onChange={(event) => setSort(event.target.value)} aria-label="Sort opportunities">
+          <option>Newest</option>
+          <option>Closing soon</option>
         </select>
         <label>
           <input
@@ -125,8 +178,49 @@ function Opportunities() {
                   <dd>{item.type === "Job" ? item.openings : item.duration}</dd>
                 </div>
                 {item.salary && <div><dt>Salary</dt><dd>{item.salary}</dd></div>}
+                {item.expiryDate && <div><dt>Apply by</dt><dd>{item.expiryDate}</dd></div>}
               </dl>
+              {item.description && <p className="opportunity-description">{item.description}</p>}
+              {item.eligibility && <p className="opportunity-eligibility"><strong>Eligibility:</strong> {item.eligibility}</p>}
+              {item.skills?.length > 0 && (
+                <div className="opportunity-skills" aria-label="Required skills">
+                  {item.skills.map((skill) => <span key={skill}>{skill}</span>)}
+                </div>
+              )}
               {!item.verified && <p className="opportunity-review-status">Under review</p>}
+              <div className="opportunity-report-actions">
+                {reportFeedback[item.id] ? (
+                  <p role="status">{reportFeedback[item.id]}</p>
+                ) : reportedOpportunityIds.has(String(item.id)) ? (
+                  <p>Report submitted · under review</p>
+                ) : (
+                  <button
+                    type="button"
+                    className="report-opportunity-button"
+                    onClick={() => setReportingOpportunityId(reportingOpportunityId === item.id ? null : item.id)}
+                  >
+                    Report listing
+                  </button>
+                )}
+              </div>
+              {reportingOpportunityId === item.id && (
+                <form className="opportunity-report-form" onSubmit={(event) => submitReport(event, item)}>
+                  <label htmlFor={`report-reason-${item.id}`}>Why are you reporting this listing?</label>
+                  <select id={`report-reason-${item.id}`} name="reason" required defaultValue="">
+                    <option value="" disabled>Select a reason</option>
+                    <option>Misleading or inaccurate information</option>
+                    <option>Expired or already filled</option>
+                    <option>Suspicious company or scam</option>
+                    <option>Duplicate listing</option>
+                    <option>Other</option>
+                  </select>
+                  <textarea name="details" rows="2" maxLength="500" placeholder="Add helpful context (optional)" />
+                  <div>
+                    <button type="submit">Send report</button>
+                    <button type="button" onClick={() => setReportingOpportunityId(null)}>Cancel</button>
+                  </div>
+                </form>
+              )}
             </article>
           ))}
         </section>

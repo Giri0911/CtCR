@@ -1,11 +1,13 @@
 import { useState } from "react";
-import { loadOpportunities, saveOpportunities } from "../Data/opportunities.js";
+import { isOpportunityExpired, loadOpportunities, saveOpportunities } from "../Data/opportunities.js";
+import { loadOpportunityReports, saveOpportunityReports } from "../Data/opportunityReports.js";
 import { loadDriveRequests, saveDriveRequests } from "../Data/driveRequests.js";
 import { loadVerificationRequests, saveVerificationRequests } from "../Data/verificationRequests.js";
 import NotificationCenter from "../components/NotificationCenter.jsx";
 
 function AdminDashboard() {
   const [opportunities, setOpportunities] = useState(loadOpportunities);
+  const [opportunityReports, setOpportunityReports] = useState(loadOpportunityReports);
   const [driveRequests, setDriveRequests] = useState(loadDriveRequests);
   const [verificationRequests, setVerificationRequests] = useState(loadVerificationRequests);
   const [filter, setFilter] = useState("All");
@@ -40,6 +42,29 @@ function AdminDashboard() {
 
     saveOpportunities(updated);
     setOpportunities(updated);
+  };
+
+  const reviewOpportunityReport = (reportId, status) => {
+    const report = opportunityReports.find((item) => item.id === reportId);
+    if (!report) return;
+
+    if (status === "removed") {
+      const updatedOpportunities = opportunities.map((item) =>
+        item.id === report.opportunityId
+          ? { ...item, verified: false, status: "rejected" }
+          : item
+      );
+      saveOpportunities(updatedOpportunities);
+      setOpportunities(updatedOpportunities);
+    }
+
+    const updatedReports = opportunityReports.map((item) =>
+      item.id === reportId
+        ? { ...item, status, reviewedAt: new Date().toISOString() }
+        : item
+    );
+    saveOpportunityReports(updatedReports);
+    setOpportunityReports(updatedReports);
   };
 
   const reviewDriveRequest = (id, adminStatus) => {
@@ -79,8 +104,10 @@ function AdminDashboard() {
   };
 
   const filteredOpportunities =
-    filter === "Drive Requests" || filter === "Organization Verification"
+    filter === "Drive Requests" || filter === "Organization Verification" || filter === "Reported Listings"
       ? []
+      : filter === "Expired"
+      ? opportunities.filter(isOpportunityExpired)
       : filter === "All"
       ? opportunities
       : filter === "Pending"
@@ -116,6 +143,7 @@ function AdminDashboard() {
   const internships = opportunities.filter(
     (item) => item.type === "Internship"
   ).length;
+  const expired = opportunities.filter(isOpportunityExpired).length;
 
   const pendingDriveRequests = driveRequests.filter(
     (request) => request.adminStatus === "pending"
@@ -128,6 +156,9 @@ function AdminDashboard() {
   ).length;
   const pendingVerificationRequests = verificationRequests.filter(
     (request) => request.status === "pending"
+  ).length;
+  const pendingOpportunityReports = opportunityReports.filter(
+    (report) => report.status === "pending"
   ).length;
   const approvedVerificationRequests = verificationRequests.filter(
     (request) => request.status === "approved"
@@ -165,6 +196,12 @@ function AdminDashboard() {
       title: "Opportunity review",
       message: `${pending} opportunity${pending === 1 ? " needs" : "s need"} verification.`,
       tone: "info"
+    }] : []),
+    ...(pendingOpportunityReports > 0 ? [{
+      id: "pending-opportunity-reports",
+      title: "Reported listings",
+      message: `${pendingOpportunityReports} listing${pendingOpportunityReports === 1 ? "" : "s"} need review.`,
+      tone: "warning"
     }] : [])
   ];
 
@@ -218,6 +255,13 @@ function AdminDashboard() {
           </button>
 
           <button
+            className={filter === "Expired" ? "active" : ""}
+            onClick={() => setFilter("Expired")}
+          >
+            Expired Listings{expired > 0 ? ` (${expired})` : ""}
+          </button>
+
+          <button
             className={filter === "Drive Requests" ? "active" : ""}
             onClick={() => setFilter("Drive Requests")}
           >
@@ -229,6 +273,13 @@ function AdminDashboard() {
             onClick={() => setFilter("Organization Verification")}
           >
             Organization Verification{pendingVerificationRequests > 0 ? ` (${pendingVerificationRequests})` : ""}
+          </button>
+
+          <button
+            className={filter === "Reported Listings" ? "active" : ""}
+            onClick={() => setFilter("Reported Listings")}
+          >
+            Reported Listings{pendingOpportunityReports > 0 ? ` (${pendingOpportunityReports})` : ""}
           </button>
 
         </div>
@@ -248,14 +299,22 @@ function AdminDashboard() {
                 ? "Drive Request Review"
                 : filter === "Organization Verification"
                   ? "Organization Verification"
-                  : "Verification Dashboard"}
+                  : filter === "Reported Listings"
+                    ? "Reported Listings"
+                    : filter === "Expired"
+                      ? "Expired Opportunities"
+                    : "Verification Dashboard"}
             </h1>
             <span>
               {filter === "Drive Requests"
                 ? "Review college requests before sending them to companies."
                 : filter === "Organization Verification"
                   ? "Check organization credentials before marking an account genuine."
-                  : "Review and verify company opportunities."}
+                  : filter === "Reported Listings"
+                    ? "Review concerns reported about job and internship listings."
+                    : filter === "Expired"
+                      ? "Review listings that have passed their application deadline."
+                    : "Review and verify company opportunities."}
             </span>
           </div>
 
@@ -282,6 +341,25 @@ function AdminDashboard() {
             <div className="admin-stat">
               <span>Not Verified</span>
               <strong>{rejectedVerificationRequests}</strong>
+            </div>
+          </div>
+        ) : filter === "Reported Listings" ? (
+          <div className="admin-stats">
+            <div className="admin-stat">
+              <span>Total Reports</span>
+              <strong>{opportunityReports.length}</strong>
+            </div>
+            <div className="admin-stat">
+              <span>Awaiting Review</span>
+              <strong>{pendingOpportunityReports}</strong>
+            </div>
+            <div className="admin-stat">
+              <span>Listings Removed</span>
+              <strong>{opportunityReports.filter((report) => report.status === "removed").length}</strong>
+            </div>
+            <div className="admin-stat">
+              <span>Reports Dismissed</span>
+              <strong>{opportunityReports.filter((report) => report.status === "dismissed").length}</strong>
             </div>
           </div>
         ) : filter === "Drive Requests" ? (
@@ -326,6 +404,11 @@ function AdminDashboard() {
             <strong>{internships}</strong>
           </div>
 
+          <div className="admin-stat">
+            <span>Expired Listings</span>
+            <strong>{expired}</strong>
+          </div>
+
         </div>
         )}
 
@@ -339,18 +422,68 @@ function AdminDashboard() {
                 ? "College Drive Requests"
                 : filter === "Organization Verification"
                   ? "Verification Applications"
-                  : `${filter} Opportunities`}
+                  : filter === "Reported Listings"
+                    ? "Listing Reports"
+                    : filter === "Expired"
+                      ? "Expired Opportunities"
+                      : `${filter} Opportunities`}
             </h2>
             <span>
               {filter === "Drive Requests"
                 ? `${driveRequests.length} ${driveRequests.length === 1 ? "request" : "requests"}`
                 : filter === "Organization Verification"
                   ? `${filteredVerificationRequests.length} ${filteredVerificationRequests.length === 1 ? "application" : "applications"}`
+                  : filter === "Reported Listings"
+                    ? `${opportunityReports.length} ${opportunityReports.length === 1 ? "report" : "reports"}`
                   : `${filteredOpportunities.length} opportunities`}
             </span>
           </div>
 
-          {filter === "Organization Verification" ? (
+          {filter === "Reported Listings" ? (
+            opportunityReports.length === 0 ? (
+              <div className="admin-empty">
+                <h3>No listing reports</h3>
+                <p>Reports submitted by colleges will appear here for review.</p>
+              </div>
+            ) : (
+              <div className="admin-opportunity-list">
+                {[...opportunityReports]
+                  .sort((first, second) => {
+                    if (first.status === "pending" && second.status !== "pending") return -1;
+                    if (second.status === "pending" && first.status !== "pending") return 1;
+                    return (second.reportedAt || "").localeCompare(first.reportedAt || "");
+                  })
+                  .map((report) => (
+                    <article className="admin-opportunity-card admin-report-card" key={report.id}>
+                      <div className="admin-opportunity-info">
+                        <div className="admin-title-row">
+                          <h3>{report.title}</h3>
+                          <span className={`admin-drive-status admin-drive-${report.status === "pending" ? "pending" : report.status}`}>
+                            {report.status === "pending" ? "Awaiting review" : report.status}
+                          </span>
+                        </div>
+                        <p className="admin-company">{report.company}</p>
+                        <div className="admin-details">
+                          <span>Reason: {report.reason}</span>
+                          <span>Reported: {report.reportedAt ? new Date(report.reportedAt).toLocaleString() : "Date unavailable"}</span>
+                          {report.details && <span>{report.details}</span>}
+                        </div>
+                      </div>
+                      {report.status === "pending" && (
+                        <div className="admin-actions">
+                          <button className="verify-btn" onClick={() => reviewOpportunityReport(report.id, "dismissed")}>
+                            Dismiss
+                          </button>
+                          <button className="reject-btn" onClick={() => reviewOpportunityReport(report.id, "removed")}>
+                            Remove listing
+                          </button>
+                        </div>
+                      )}
+                    </article>
+                  ))}
+              </div>
+            )
+          ) : filter === "Organization Verification" ? (
             <>
               <div className="verification-review-controls">
                 <input
@@ -558,6 +691,9 @@ function AdminDashboard() {
                       {item.duration && (
                         <span>⏱ {item.duration}</span>
                       )}
+                      {item.expiryDate && (
+                        <span>Apply by {item.expiryDate}</span>
+                      )}
 
                     </div>
 
@@ -567,6 +703,11 @@ function AdminDashboard() {
 
                         <span className="admin-verified">
                           ✓ Verified
+                        </span>
+
+                      ) : isOpportunityExpired(item) ? (
+                        <span className="admin-rejected">
+                          Expired
                         </span>
 
                       ) : item.status === "rejected" ? (
