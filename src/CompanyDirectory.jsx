@@ -1,5 +1,23 @@
+ "use client";
+
 import { useState } from "react";
 import { isOpportunityActive, loadOpportunities } from "./Data/opportunities.js";
+import { loadDriveRequests, saveDriveRequests } from "./Data/driveRequests.js";
+import { loadOrganizationReports, saveOrganizationReports } from "./Data/organizationReports.js";
+import CollegePortalLayout from "./components/CollegePortalLayout.jsx";
+
+const today = new Date();
+today.setMinutes(today.getMinutes() - today.getTimezoneOffset());
+const MIN_DRIVE_DATE = today.toISOString().slice(0, 10);
+
+function loadCollegeReporter() {
+  try {
+    const profile = JSON.parse(localStorage.getItem("collegeProfile") || "{}");
+    return typeof profile.name === "string" ? profile.name.trim() : "";
+  } catch {
+    return "";
+  }
+}
 
 function CompanyDirectory() {
 
@@ -70,7 +88,18 @@ function CompanyDirectory() {
   const [location, setLocation] = useState("All Locations");
   const [industry, setIndustry] = useState("All Industries");
   const [selectedCompany, setSelectedCompany] = useState(null);
+  const [organizationReports, setOrganizationReports] = useState(loadOrganizationReports);
+  const [reportFeedback, setReportFeedback] = useState("");
+  const [reportingCompanyId, setReportingCompanyId] = useState(null);
+  const [driveRequestCompanyId, setDriveRequestCompanyId] = useState(null);
+  const [driveRequestFeedback, setDriveRequestFeedback] = useState("");
   const opportunities = loadOpportunities();
+  const reporterName = loadCollegeReporter();
+  const hasPendingReport = (companyName) => organizationReports.some((report) =>
+    report.organizationName === companyName &&
+    report.reportedBy === (reporterName || "College representative") &&
+    report.status === "pending"
+  );
   const selectedOpportunities = selectedCompany
     ? opportunities.filter(
         (item) =>
@@ -101,37 +130,59 @@ function CompanyDirectory() {
     );
   });
 
+  const submitOrganizationReport = (event) => {
+    event.preventDefault();
+    if (!selectedCompany) return;
+    const formData = new FormData(event.currentTarget);
+    const report = {
+      id: Date.now(),
+      organizationName: selectedCompany.name,
+      organizationLocation: selectedCompany.location,
+      reportedBy: reporterName || "College representative",
+      reason: String(formData.get("reason") || ""),
+      details: String(formData.get("details") || "").trim(),
+      status: "pending",
+      reportedAt: new Date().toISOString()
+    };
+    const updatedReports = [...organizationReports, report];
+    saveOrganizationReports(updatedReports);
+    setOrganizationReports(updatedReports);
+    setReportingCompanyId(null);
+    setReportFeedback("Your report has been sent to the CampusXCompany review team.");
+  };
+
+  const submitDriveRequest = (event) => {
+    event.preventDefault();
+    if (!selectedCompany) return;
+    const formData = new FormData(event.currentTarget);
+    const request = {
+      id: Date.now(),
+      company: selectedCompany.name,
+      college: String(formData.get("collegeName") || "").trim(),
+      date: String(formData.get("driveDate") || ""),
+      students: Number(formData.get("students")),
+      message: String(formData.get("message") || "").trim(),
+      adminStatus: "pending",
+      status: "pending",
+      createdAt: new Date().toISOString()
+    };
+    const updatedRequests = [...loadDriveRequests(), request];
+    saveDriveRequests(updatedRequests);
+    setDriveRequestCompanyId(null);
+    setDriveRequestFeedback(`Drive request sent for ${selectedCompany.name}. It will be forwarded after admin review.`);
+  };
+
   return (
-
-    <div className="directory-page">
-
-      {/* Header */}
-
-      <div className="directory-header">
-
-        <div>
-
-          <p className="directory-label">
-            COMPANY DIRECTORY
-          </p>
-
-          <h1>
-            Discover Companies Around You
-          </h1>
-
-          <p>
-            Find companies, job vacancies and verified
-            internship opportunities available for your college.
-          </p>
-
-        </div>
-
+    <CollegePortalLayout
+      title="Discover companies"
+      description="Find employers, explore opportunities, and request campus recruitment drives."
+      contentClassName="college-directory-main"
+    >
+      <div className="directory-page college-directory-content">
         <div className="directory-location">
           📍 <strong>Guntur</strong>
           <span>Your college location</span>
         </div>
-
-      </div>
 
       {/* Search */}
 
@@ -275,12 +326,34 @@ function CompanyDirectory() {
 
               </div>
 
-              <button
-                className="view-company-btn"
-                onClick={() => setSelectedCompany(company)}
-              >
-                View Company
-              </button>
+              <div className="directory-card-actions">
+                <button
+                  className="view-company-btn"
+                  type="button"
+                  onClick={() => {
+                    setReportFeedback("");
+                    setReportingCompanyId(null);
+                    setDriveRequestFeedback("");
+                    setDriveRequestCompanyId(null);
+                    setSelectedCompany(company);
+                  }}
+                >
+                  View Company
+                </button>
+                <button
+                  className="request-drive-button"
+                  type="button"
+                  onClick={() => {
+                    setReportFeedback("");
+                    setReportingCompanyId(null);
+                    setDriveRequestFeedback("");
+                    setDriveRequestCompanyId(company.id);
+                    setSelectedCompany(company);
+                  }}
+                >
+                  Request Drive
+                </button>
+              </div>
 
             </div>
 
@@ -308,7 +381,11 @@ function CompanyDirectory() {
 
         <div
           className="company-modal-overlay"
-          onClick={() => setSelectedCompany(null)}
+          onClick={() => {
+            setSelectedCompany(null);
+            setReportingCompanyId(null);
+            setDriveRequestCompanyId(null);
+          }}
         >
 
           <div
@@ -318,7 +395,12 @@ function CompanyDirectory() {
 
             <button
               className="modal-close"
-              onClick={() => setSelectedCompany(null)}
+              aria-label="Close company details"
+              onClick={() => {
+                setSelectedCompany(null);
+                setReportingCompanyId(null);
+                setDriveRequestCompanyId(null);
+              }}
             >
               ×
             </button>
@@ -416,13 +498,116 @@ function CompanyDirectory() {
 
             </div>
 
+            <section className="directory-drive-request" aria-labelledby="directory-drive-title">
+              <h3 id="directory-drive-title">Request a campus drive</h3>
+              <p>Invite {selectedCompany.name} to meet students at your college.</p>
+              {driveRequestFeedback ? (
+                <p className="directory-drive-feedback" role="status">{driveRequestFeedback}</p>
+              ) : driveRequestCompanyId === selectedCompany.id ? (
+                <form className="directory-drive-form" onSubmit={submitDriveRequest}>
+                  <label htmlFor="directory-drive-college">College name</label>
+                  <input
+                    id="directory-drive-college"
+                    name="collegeName"
+                    defaultValue={loadCollegeReporter()}
+                    placeholder="Enter your college name"
+                    required
+                  />
+                  <label htmlFor="directory-drive-date">Preferred drive date</label>
+                  <input
+                    id="directory-drive-date"
+                    name="driveDate"
+                    type="date"
+                    min={MIN_DRIVE_DATE}
+                    required
+                  />
+                  <label htmlFor="directory-drive-students">Expected students</label>
+                  <input
+                    id="directory-drive-students"
+                    name="students"
+                    type="number"
+                    min="1"
+                    placeholder="e.g. 120"
+                    required
+                  />
+                  <label htmlFor="directory-drive-message">Message for the company <span>(optional)</span></label>
+                  <textarea
+                    id="directory-drive-message"
+                    name="message"
+                    rows="3"
+                    maxLength="500"
+                    placeholder="Share roles, skills, or other drive details."
+                  />
+                  <div className="directory-drive-actions">
+                    <button type="submit">Send drive request</button>
+                    <button type="button" onClick={() => setDriveRequestCompanyId(null)}>Cancel</button>
+                  </div>
+                </form>
+              ) : (
+                <button
+                  className="directory-drive-trigger"
+                  type="button"
+                  onClick={() => setDriveRequestCompanyId(selectedCompany.id)}
+                >
+                  Request Drive
+                </button>
+              )}
+            </section>
+
+            <section className="organization-report-section" aria-labelledby="organization-report-title">
+              <h3 id="organization-report-title">Report this organization</h3>
+              <p>If you have concerns about this organization, share them with our review team.</p>
+              {reportFeedback ? (
+                <p className="organization-report-feedback" role="status">{reportFeedback}</p>
+              ) : hasPendingReport(selectedCompany.name) ? (
+                <p className="organization-report-feedback" role="status">Your report for this organization is awaiting review.</p>
+              ) : reportingCompanyId === selectedCompany.id ? (
+                <form className="organization-report-form" onSubmit={submitOrganizationReport}>
+                  <label htmlFor="organization-report-reason">Reason for reporting</label>
+                  <select id="organization-report-reason" name="reason" defaultValue="" required>
+                    <option value="" disabled>Select a reason</option>
+                    <option>Misleading or false organization information</option>
+                    <option>Unprofessional or inappropriate conduct</option>
+                    <option>Suspicious or potentially fraudulent activity</option>
+                    <option>Repeatedly unresponsive or poor communication</option>
+                    <option>Other concern</option>
+                  </select>
+                  <label htmlFor="organization-report-details">What happened?</label>
+                  <textarea
+                    id="organization-report-details"
+                    name="details"
+                    rows="3"
+                    maxLength="1000"
+                    placeholder="Describe your concern so the review team can investigate."
+                    required
+                  />
+                  <div className="organization-report-actions">
+                    <button type="submit">Submit report</button>
+                    <button type="button" onClick={() => setReportingCompanyId(null)}>Cancel</button>
+                  </div>
+                </form>
+              ) : (
+                <button
+                  className="organization-report-trigger"
+                  type="button"
+                  onClick={() => {
+                    setReportFeedback("");
+                    setReportingCompanyId(selectedCompany.id);
+                  }}
+                >
+                  Report organization
+                </button>
+              )}
+            </section>
+
           </div>
 
         </div>
 
       )}
 
-    </div>
+      </div>
+    </CollegePortalLayout>
   );
 }
 

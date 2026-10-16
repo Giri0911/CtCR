@@ -1,5 +1,7 @@
-import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+ "use client";
+
+import { useEffect, useState } from "react";
+import { Link, useLocation, useNavigate } from "../next-router-compat.jsx";
 import { isOpportunityExpired, loadOpportunities, saveOpportunities } from "../Data/opportunities.js";
 import { loadDriveRequests, saveDriveRequests } from "../Data/driveRequests.js";
 import { loadVerificationRequests, saveVerificationRequests } from "../Data/verificationRequests.js";
@@ -37,6 +39,11 @@ function getDefaultExpiryDate() {
   return localDate.toISOString().slice(0, 10);
 }
 
+function getTodayDateInputValue() {
+  const date = new Date();
+  return new Date(date.getTime() - date.getTimezoneOffset() * 60_000).toISOString().slice(0, 10);
+}
+
 function getCompanyItems(type, activeCompanyName) {
   return loadOpportunities()
     .filter((item) => item.company === activeCompanyName && item.type === type)
@@ -57,8 +64,17 @@ function getCompanyItems(type, activeCompanyName) {
 
 function CompanyDashboard() {
   const location = useLocation();
+  const navigate = useNavigate();
   const showingProfile = location.hash === "#company-profile";
   const showingDriveRequests = location.hash === "#drive-requests";
+  const showingJobs = location.hash === "#job-vacancies";
+  const showingInternships = location.hash === "#internships";
+  const showingDashboard = ![
+    "#company-profile",
+    "#drive-requests",
+    "#job-vacancies",
+    "#internships"
+  ].includes(location.hash);
   const [showPostedNotice, setShowPostedNotice] = useState(() =>
     Boolean(location.state?.opportunitySubmitted)
   );
@@ -66,6 +82,46 @@ function CompanyDashboard() {
   const [showInternshipForm, setShowInternshipForm] = useState(false);
   const [editingOpportunity, setEditingOpportunity] = useState(null);
   const [opportunityFeedback, setOpportunityFeedback] = useState("");
+  const openJobForm = () => {
+    setEditingOpportunity(null);
+    setShowInternshipForm(false);
+    setShowJobForm(true);
+  };
+  const openInternshipForm = () => {
+    setEditingOpportunity(null);
+    setShowJobForm(false);
+    setShowInternshipForm(true);
+  };
+  useEffect(() => {
+    const postingJob = location.hash === "#post-job";
+    const postingInternship = location.hash === "#post-internship";
+    setShowJobForm(postingJob);
+    setShowInternshipForm(postingInternship);
+  }, [location.hash]);
+  useEffect(() => {
+    if (showJobForm) {
+      document.getElementById("company-job-form")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [showJobForm]);
+  useEffect(() => {
+    if (showInternshipForm) {
+      document.getElementById("company-internship-form")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [showInternshipForm]);
+  useEffect(() => {
+    const targetId = {
+      "#create-listing": "create-listing",
+      "#company-profile": "company-profile",
+      "#drive-requests": "drive-requests",
+      "#job-vacancies": "job-vacancies",
+      "#internships": "internships"
+    }[location.hash];
+    if (targetId) {
+      window.requestAnimationFrame(() => {
+        document.getElementById(targetId)?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    }
+  }, [location.hash]);
   const [companyProfile, setCompanyProfile] = useState(loadCompanyProfile);
   const [companyProfileForm, setCompanyProfileForm] = useState(loadCompanyProfile);
   const [editingCompanyProfile, setEditingCompanyProfile] = useState(() => !loadCompanyProfile().email);
@@ -102,9 +158,18 @@ function CompanyDashboard() {
       .filter((request) => request.status === "accepted")
       .map((request) => request.college)
   ).size;
-  const pendingOpportunities = [...jobs, ...internships].filter(
-    (item) => !item.verified && item.status === "Under Review"
-  ).length;
+  const deadlinesThisWeek = [...jobs, ...internships].filter((item) => {
+    if (
+      !item.expiryDate ||
+      isOpportunityExpired(item) ||
+      ["closed", "rejected"].includes(item.status?.toLowerCase())
+    ) return false;
+    const deadline = new Date(`${item.expiryDate}T00:00:00`);
+    const today = new Date();
+    const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const daysUntilDeadline = Math.round((deadline.getTime() - todayStart.getTime()) / 86_400_000);
+    return daysUntilDeadline >= 0 && daysUntilDeadline <= 7;
+  }).length;
 
   const [job, setJob] = useState({
     title: "",
@@ -171,6 +236,7 @@ function CompanyDashboard() {
     });
 
     setShowJobForm(false);
+    navigate("/company#job-vacancies", { replace: true });
   };
 
   const addInternship = (e) => {
@@ -214,6 +280,7 @@ function CompanyDashboard() {
     });
 
     setShowInternshipForm(false);
+    navigate("/company#internships", { replace: true });
   };
 
   const refreshCompanyOpportunities = (updatedOpportunities) => {
@@ -250,6 +317,8 @@ function CompanyDashboard() {
       setOpportunityFeedback("This opportunity could not be found in your company listings. Refresh and try again.");
       return;
     }
+    setShowJobForm(false);
+    setShowInternshipForm(false);
     setOpportunityFeedback("");
     setEditingOpportunity(opportunity);
   };
@@ -280,6 +349,40 @@ function CompanyDashboard() {
         ? "Opportunity closed and removed from active college searches."
         : "Opportunity reopened and submitted for verification."
     );
+  };
+
+  const updateOpportunityDeadline = (opportunityId, expiryDate) => {
+    const dateParts = /^(\d{4})-(\d{2})-(\d{2})$/.exec(expiryDate);
+    const [year, month, day] = dateParts ? dateParts.slice(1).map(Number) : [];
+    const deadline = dateParts ? new Date(year, month - 1, day) : null;
+    const today = new Date();
+    const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    if (
+      !deadline ||
+      deadline.getFullYear() !== year ||
+      deadline.getMonth() !== month - 1 ||
+      deadline.getDate() !== day ||
+      deadline < todayStart
+    ) {
+      setOpportunityFeedback("Choose a valid deadline that is today or later.");
+      return;
+    }
+
+    const allOpportunities = loadOpportunities();
+    const existingOpportunity = allOpportunities.find(
+      (item) => item.id === opportunityId && item.company === companyProfile.name
+    );
+    if (!existingOpportunity) {
+      setOpportunityFeedback("This opportunity could not be found in your company listings. Refresh and try again.");
+      return;
+    }
+
+    refreshCompanyOpportunities(allOpportunities.map((item) =>
+      item.id === opportunityId && item.company === companyProfile.name
+        ? { ...item, expiryDate }
+        : item
+    ));
+    setOpportunityFeedback(`Application deadline updated for ${existingOpportunity.title}. Listing status was not changed.`);
   };
 
   const updateDriveRequest = (requestId, status) => {
@@ -419,38 +522,26 @@ function CompanyDashboard() {
       <aside className="company-sidebar">
 
         <div className="company-dashboard-logo">
-          Campus<span>Connect</span>
+          Campus<span>XCompany</span>
         </div>
 
         <nav className="company-sidebar-nav" aria-label="Company navigation">
           <p className="company-menu-title">MAIN MENU</p>
 
-          <Link className={!showingProfile && !showingDriveRequests ? "company-active-menu" : ""} to="/company">
+          <Link className={showingDashboard ? "company-active-menu" : ""} to="/company">
             Dashboard
           </Link>
 
-          <Link to="/company#job-vacancies">
+          <Link className={showingJobs ? "company-active-menu" : ""} to="/company#job-vacancies">
             Job Vacancies
           </Link>
 
-          <Link to="/company#internships">
+          <Link className={showingInternships ? "company-active-menu" : ""} to="/company#internships">
             Internships
           </Link>
 
           <Link className={showingDriveRequests ? "company-active-menu" : ""} to="/company#drive-requests">
             Drive Requests
-          </Link>
-
-          <Link to="/company/opportunities/new">
-            Post an Opportunity
-          </Link>
-
-          <Link to="/opportunities">
-            Browse Opportunities
-          </Link>
-
-          <Link to="/college/companies">
-            Company Directory
           </Link>
 
           <p className="company-menu-title">ACCOUNT</p>
@@ -468,18 +559,26 @@ function CompanyDashboard() {
 
       {/* Main */}
 
-      <main className={`company-dashboard-main${showingProfile ? " profile-only" : showingDriveRequests ? " drive-requests-only" : ""}`}>
+      <main
+        className={[
+          "company-dashboard-main",
+          showingProfile && "profile-only",
+          showingDriveRequests && "drive-requests-only",
+          showingJobs && "jobs-only",
+          showingInternships && "internships-only"
+        ].filter(Boolean).join(" ")}
+      >
 
         {/* Header */}
 
         <header className="company-header">
 
           <div>
-            <p>Company Dashboard</p>
+            <p>EMPLOYER WORKSPACE</p>
             <h1>Welcome back 👋</h1>
           </div>
 
-          <NotificationCenter notifications={companyNotifications} />
+          <NotificationCenter notifications={companyNotifications} scope="company" />
 
           <div className="company-user">
 
@@ -495,6 +594,19 @@ function CompanyDashboard() {
           </div>
 
         </header>
+
+        <section className="company-welcome-panel" id="create-listing" aria-label="Company workspace shortcuts">
+          <div>
+            <p>HIRING WORKSPACE</p>
+            <h2>Find the right talent for your next opportunity.</h2>
+            <span>Create and manage job and internship listings for campus candidates.</span>
+          </div>
+          <div className="company-welcome-actions">
+            <Link to="/company#post-job">Post a job <span aria-hidden="true">→</span></Link>
+            <Link to="/company#post-internship">Post an internship</Link>
+            <Link to="/company#job-vacancies">Manage listings</Link>
+          </div>
+        </section>
 
         {showPostedNotice && (
           <div className="opportunity-submission-notice" role="status">
@@ -641,7 +753,7 @@ function CompanyDashboard() {
               {verificationStatus === "approved" ? (
                 <p>Your company has been verified as a genuine business.</p>
               ) : verificationStatus === "pending" ? (
-                <p>Your application is with the CampusConnect admin team for review.</p>
+                <p>Your application is with the CampusXCompany admin team for review.</p>
               ) : companyProfile.email ? (
                 <>
                   <p>Submit your business registration details so an admin can verify your company.</p>
@@ -756,43 +868,9 @@ function CompanyDashboard() {
 
           <div className="company-stat-card">
 
-            <span>Pending Review</span>
-            <strong>{pendingOpportunities}</strong>
-            <small>Jobs and internships</small>
-
-          </div>
-
-        </section>
-
-        {/* Quick Actions */}
-
-        <section className="company-actions">
-
-          <div>
-
-            <h2>Quick Actions</h2>
-
-            <p>
-              Publish opportunities for colleges to discover.
-            </p>
-
-          </div>
-
-          <div className="company-action-buttons">
-
-            <button
-              className="post-job-btn"
-              onClick={() => setShowJobForm(true)}
-            >
-              + Post Job
-            </button>
-
-            <button
-              className="post-internship-btn"
-              onClick={() => setShowInternshipForm(true)}
-            >
-              + Post Internship
-            </button>
+            <span>Deadlines this week</span>
+            <strong>{deadlinesThisWeek}</strong>
+            <small>Listings closing in 7 days</small>
 
           </div>
 
@@ -814,11 +892,11 @@ function CompanyDashboard() {
               <div className="drive-request-empty">
                 <span className="drive-request-empty-mark" aria-hidden="true">↗</span>
                 <div>
-                  <h3>{requestsAwaitingAdminReview > 0 ? "Requests are under admin review" : "No drive requests yet"}</h3>
+                  <h3>{requestsAwaitingAdminReview > 0 ? "Requests are under admin review" : "No approved drive requests yet"}</h3>
                   <p>
                     {requestsAwaitingAdminReview > 0
                       ? `${requestsAwaitingAdminReview} ${requestsAwaitingAdminReview === 1 ? "request is" : "requests are"} being reviewed before reaching your inbox.`
-                      : "When a college invites you to host a campus drive, its request will appear here."}
+                      : "Drive requests appear here after a college submits one and an admin approves it."}
                   </p>
                 </div>
               </div>
@@ -863,7 +941,7 @@ function CompanyDashboard() {
 
         {showJobForm && (
 
-          <section className="company-form-card">
+          <section className="company-form-card" id="company-job-form">
 
             <div className="form-header">
 
@@ -876,7 +954,8 @@ function CompanyDashboard() {
 
               <button
                 className="close-form"
-                onClick={() => setShowJobForm(false)}
+                type="button"
+                onClick={() => navigate("/company#job-vacancies", { replace: true })}
               >
                 ×
               </button>
@@ -1046,7 +1125,7 @@ function CompanyDashboard() {
 
         {showInternshipForm && (
 
-          <section className="company-form-card">
+          <section className="company-form-card" id="company-internship-form">
 
             <div className="form-header">
 
@@ -1061,7 +1140,8 @@ function CompanyDashboard() {
 
               <button
                 className="close-form"
-                onClick={() => setShowInternshipForm(false)}
+                type="button"
+                onClick={() => navigate("/company#internships", { replace: true })}
               >
                 ×
               </button>
@@ -1249,71 +1329,89 @@ function CompanyDashboard() {
             <div>
               <h2>Job Vacancies</h2>
 
-              <p>
-                Manage your current recruitment opportunities.
-              </p>
+              <p>Modify job details, salary, requirements, and application deadlines.</p>
             </div>
 
-            <button
-              className="small-action-btn"
-              onClick={() => setShowJobForm(true)}
-            >
+            <button className="small-action-btn" type="button" onClick={openJobForm}>
               + Add Job
             </button>
 
           </div>
 
-          <div className="company-table">
+          {editingOpportunity?.type === "Job" && (
+            <OpportunityEditor
+              key={editingOpportunity.id}
+              opportunity={editingOpportunity}
+              onClose={() => setEditingOpportunity(null)}
+              onSave={saveEditedOpportunity}
+            />
+          )}
 
-            <div className="company-table-header">
-
-              <span>Position</span>
-              <span>Location</span>
-              <span>Openings</span>
-              <span>Type</span>
-              <span>Status</span>
-              <span>Actions</span>
-
+          {jobs.length === 0 ? (
+            <div className="company-listing-empty">
+              <h3>No job vacancies yet</h3>
+              <p>Create a job listing to start reaching campus candidates.</p>
+              <button className="small-action-btn" type="button" onClick={openJobForm}>Post your first job</button>
             </div>
-
-            {jobs.map((item) => (
-
-              <div
-                className="company-table-row"
-                key={item.id}
-              >
-
-                <strong>{item.title}</strong>
-
-                <span>📍 {item.location}</span>
-
-                <span>{item.openings}</span>
-
-                <span>{item.type}</span>
-
-                <span className="company-active-status">
-                  {item.status}
-                  {item.expiryDate && <small className="company-opportunity-expiry">Apply by {item.expiryDate}</small>}
-                </span>
-                <div className="company-opportunity-actions">
-                  <button
-                    type="button"
-                    onClick={() => openOpportunityEditor(item.id)}
-                  >
-                    Edit
-                  </button>
-                  {item.status === "Closed" ? (
-                    <button type="button" onClick={() => updateOpportunityStatus(item.id, "pending")}>Reopen</button>
-                  ) : item.status !== "Rejected" ? (
-                    <button type="button" onClick={() => updateOpportunityStatus(item.id, "closed")}>Close</button>
-                  ) : null}
-                </div>
-
+          ) : (
+            <div className="company-table">
+              <div className="company-table-header">
+                <span>Position</span>
+                <span>Location</span>
+                <span>Openings</span>
+                <span>Type</span>
+                <span>Status</span>
+                <span>Actions</span>
               </div>
 
-            ))}
+              {jobs.map((item) => (
 
-          </div>
+                <div
+                  className="company-table-row"
+                  key={item.id}
+                >
+
+                  <strong>{item.title}</strong>
+
+                  <span>📍 {item.location}</span>
+
+                  <span>{item.openings}</span>
+
+                  <span>{item.type}</span>
+
+                  <span className="company-active-status">
+                    {item.status}
+                    <label className="company-deadline-control">
+                      <span>Apply by</span>
+                      <input
+                        type="date"
+                        aria-label={`Application deadline for ${item.title}`}
+                        min={getTodayDateInputValue()}
+                        value={item.expiryDate || ""}
+                        onChange={(event) => updateOpportunityDeadline(item.id, event.target.value)}
+                      />
+                    </label>
+                  </span>
+                  <div className="company-opportunity-actions">
+                    <button
+                      type="button"
+                      onClick={() => openOpportunityEditor(item.id)}
+                    >
+                      Modify job
+                    </button>
+                    {item.status === "Closed" ? (
+                      <button type="button" onClick={() => updateOpportunityStatus(item.id, "pending")}>Reopen</button>
+                    ) : item.status !== "Rejected" ? (
+                      <button type="button" onClick={() => updateOpportunityStatus(item.id, "closed")}>Close</button>
+                    ) : null}
+                  </div>
+
+                </div>
+
+              ))}
+
+            </div>
+          )}
 
         </section>
 
@@ -1333,81 +1431,92 @@ function CompanyDashboard() {
 
             </div>
 
-            <button
-              className="small-action-btn"
-              onClick={() => setShowInternshipForm(true)}
-            >
+            <button className="small-action-btn" type="button" onClick={openInternshipForm}>
               + Add Internship
             </button>
 
           </div>
 
-          <div className="company-table">
+          {editingOpportunity?.type === "Internship" && (
+            <OpportunityEditor
+              key={editingOpportunity.id}
+              opportunity={editingOpportunity}
+              onClose={() => setEditingOpportunity(null)}
+              onSave={saveEditedOpportunity}
+            />
+          )}
 
-            <div className="company-table-header">
-
-              <span>Internship</span>
-              <span>Duration</span>
-              <span>Mode</span>
-              <span>Status</span>
-              <span>Verification</span>
-              <span>Actions</span>
-
+          {internships.length === 0 ? (
+            <div className="company-listing-empty">
+              <h3>No internships yet</h3>
+              <p>Create an internship listing to start reaching campus candidates.</p>
+              <button className="small-action-btn" type="button" onClick={openInternshipForm}>Post your first internship</button>
             </div>
-
-            {internships.map((item) => (
-
-              <div
-                className="company-table-row"
-                key={item.id}
-              >
-
-                <strong>{item.title}</strong>
-
-                <span>{item.duration}</span>
-
-                <span>{item.mode}</span>
-
-                <span className="company-active-status">
-                  {isOpportunityExpired(item) ? "Expired" : item.verified ? "Active" : "Under Review"}
-                  {item.expiryDate && <small className="company-opportunity-expiry">Apply by {item.expiryDate}</small>}
-                </span>
-
-                <span className="internship-verification">
-                  {item.status}
-                </span>
-                <div className="company-opportunity-actions">
-                  <button
-                    type="button"
-                    onClick={() => openOpportunityEditor(item.id)}
-                  >
-                    Edit
-                  </button>
-                  {item.status === "Closed" ? (
-                    <button type="button" onClick={() => updateOpportunityStatus(item.id, "pending")}>Reopen</button>
-                  ) : item.status !== "Rejected" ? (
-                    <button type="button" onClick={() => updateOpportunityStatus(item.id, "closed")}>Close</button>
-                  ) : null}
-                </div>
-
+          ) : (
+            <div className="company-table">
+              <div className="company-table-header">
+                <span>Internship</span>
+                <span>Duration</span>
+                <span>Mode</span>
+                <span>Status</span>
+                <span>Verification</span>
+                <span>Actions</span>
               </div>
 
-            ))}
+              {internships.map((item) => (
 
-          </div>
+                <div
+                  className="company-table-row"
+                  key={item.id}
+                >
+
+                  <strong>{item.title}</strong>
+
+                  <span>{item.duration}</span>
+
+                  <span>{item.mode}</span>
+
+                  <span className="company-active-status">
+                    {isOpportunityExpired(item) ? "Expired" : item.verified ? "Active" : "Under Review"}
+                    <label className="company-deadline-control">
+                      <span>Apply by</span>
+                      <input
+                        type="date"
+                        aria-label={`Application deadline for ${item.title}`}
+                        min={getTodayDateInputValue()}
+                        value={item.expiryDate || ""}
+                        onChange={(event) => updateOpportunityDeadline(item.id, event.target.value)}
+                      />
+                    </label>
+                  </span>
+
+                  <span className="internship-verification">
+                    {item.status}
+                  </span>
+                  <div className="company-opportunity-actions">
+                    <button
+                      type="button"
+                      onClick={() => openOpportunityEditor(item.id)}
+                    >
+                      Modify internship
+                    </button>
+                    {item.status === "Closed" ? (
+                      <button type="button" onClick={() => updateOpportunityStatus(item.id, "pending")}>Reopen</button>
+                    ) : item.status !== "Rejected" ? (
+                      <button type="button" onClick={() => updateOpportunityStatus(item.id, "closed")}>Close</button>
+                    ) : null}
+                  </div>
+
+                </div>
+
+              ))}
+
+            </div>
+          )}
 
         </section>
 
       </main>
-
-      {editingOpportunity && (
-        <OpportunityEditor
-          key={editingOpportunity.id}
-          opportunity={editingOpportunity}
-          onClose={() => setEditingOpportunity(null)}
-          onSave={saveEditedOpportunity}
-        />
-      )}
 
     </div>
   );

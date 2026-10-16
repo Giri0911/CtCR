@@ -1,9 +1,17 @@
+ "use client";
+
 import { useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "../next-router-compat.jsx";
 import { isOpportunityActive, isOpportunityExpired, loadOpportunities } from "../Data/opportunities.js";
 import { loadOpportunityReports, saveOpportunityReports } from "../Data/opportunityReports.js";
+import { CollegePortalSidebar } from "../components/CollegePortalLayout.jsx";
+import NotificationCenter from "../components/NotificationCenter.jsx";
 
 const SAVED_OPPORTUNITIES_KEY = "savedOpportunities";
+
+function createReportId() {
+  return Date.now();
+}
 
 function loadSavedOpportunityIds() {
   try {
@@ -14,29 +22,52 @@ function loadSavedOpportunityIds() {
   }
 }
 
-function loadReporterName() {
+function loadReporterProfile() {
   try {
     const profile = JSON.parse(localStorage.getItem("collegeProfile") || "{}");
-    return typeof profile.name === "string" ? profile.name.trim() : "";
+    return {
+      name: typeof profile.name === "string" ? profile.name.trim() : "",
+      email: typeof profile.email === "string" ? profile.email.trim().toLowerCase() : ""
+    };
   } catch {
-    return "";
+    return { name: "", email: "" };
+  }
+}
+
+function loadCompanyName() {
+  try {
+    const profile = JSON.parse(localStorage.getItem("companyProfile") || "{}");
+    return typeof profile.name === "string" && profile.name.trim()
+      ? profile.name.trim()
+      : "Company workspace";
+  } catch {
+    return "Company workspace";
   }
 }
 
 function Opportunities() {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const returnToCompanyDashboard = searchParams.get("from") === "company";
   const [opportunities] = useState(loadOpportunities);
-  const [type, setType] = useState(() => searchParams.get("type") || "All");
+  const requestedType = searchParams.get("type");
+  const type = ["Job", "Internship"].includes(requestedType) ? requestedType : "All";
+  const savedOnly = !returnToCompanyDashboard && searchParams.get("saved") === "true";
   const [search, setSearch] = useState("");
   const [location, setLocation] = useState("All Locations");
   const [verifiedOnly, setVerifiedOnly] = useState(true);
-  const [savedOnly, setSavedOnly] = useState(() => searchParams.get("saved") === "true");
   const [availability, setAvailability] = useState("Active");
   const [sort, setSort] = useState("Newest");
   const [reportingOpportunityId, setReportingOpportunityId] = useState(null);
   const [reportFeedback, setReportFeedback] = useState({});
   const [reports, setReports] = useState(loadOpportunityReports);
   const [savedOpportunityIds, setSavedOpportunityIds] = useState(loadSavedOpportunityIds);
+  const collegeReporter = loadReporterProfile();
+  const isReportFromCurrentCollege = (report) => {
+    if (collegeReporter.email && report.reporterEmail) {
+      return report.reporterEmail.toLowerCase() === collegeReporter.email;
+    }
+    return report.reportedBy === (collegeReporter.name || "College representative");
+  };
 
   const today = new Date();
   const isExpiringSoon = (item) => {
@@ -56,15 +87,40 @@ function Opportunities() {
     setSavedOpportunityIds(nextSavedIds);
   };
 
+  const updateType = (nextType) => {
+    setSearchParams((current) => {
+      const nextParams = new URLSearchParams(current);
+      if (nextType === "All") nextParams.delete("type");
+      else nextParams.set("type", nextType);
+      nextParams.delete("saved");
+      return nextParams;
+    });
+  };
+
   const submitReport = (event, item) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
+    const existingPendingReport = reports.some((report) =>
+      String(report.opportunityId) === String(item.id) &&
+      report.status === "pending" &&
+      isReportFromCurrentCollege(report)
+    );
+    if (existingPendingReport) {
+      setReportingOpportunityId(null);
+      setReportFeedback((current) => ({
+        ...current,
+        [item.id]: "You already have a report for this listing awaiting review."
+      }));
+      return;
+    }
     const report = {
-      id: Date.now(),
+      id: createReportId(),
       opportunityId: item.id,
       title: item.title,
       company: item.company,
-      reportedBy: loadReporterName(),
+      type: item.type,
+      reportedBy: collegeReporter.name || "College representative",
+      reporterEmail: collegeReporter.email,
       reason: formData.get("reason"),
       details: String(formData.get("details") || "").trim(),
       status: "pending",
@@ -78,7 +134,12 @@ function Opportunities() {
   };
 
   const reportedOpportunityIds = new Set(
-    reports.filter((report) => report.status === "pending").map((report) => String(report.opportunityId))
+    reports
+      .filter((report) =>
+        report.status === "pending" &&
+        isReportFromCurrentCollege(report)
+      )
+      .map((report) => String(report.opportunityId))
   );
   const locations = [...new Set(opportunities.map((item) => item.location).filter(Boolean))].sort();
   const filteredOpportunities = opportunities.filter((item) => {
@@ -101,17 +162,97 @@ function Opportunities() {
     }
     return Number(second.id) - Number(first.id);
   });
+  const savedOpportunityCount = opportunities.filter((item) =>
+    savedOpportunityIds.includes(String(item.id))
+  ).length;
+  const opportunityTabCount = (tabType) => opportunities.filter((item) =>
+    (tabType === "All" || item.type === tabType) &&
+    isOpportunityActive(item, today) &&
+    (!verifiedOnly || item.verified)
+  ).length;
+  const companyDisplayName = returnToCompanyDashboard ? loadCompanyName() : "";
+  const collegeDisplayName = collegeReporter.name || "College Admin";
 
   return (
-    <main className="opportunities-page">
-      <header className="opportunities-header">
+    <div className={returnToCompanyDashboard ? "company-dashboard company-opportunities-workspace" : "college-dashboard"}>
+      {returnToCompanyDashboard && (
+        <aside className="company-sidebar">
+          <div className="company-dashboard-logo">
+            Campus<span>XCompany</span>
+          </div>
+          <nav className="company-sidebar-nav" aria-label="Company navigation">
+            <p className="company-menu-title">MAIN MENU</p>
+            <Link to="/company">Dashboard</Link>
+            <Link to="/company#job-vacancies">Job Vacancies</Link>
+            <Link to="/company#internships">Internships</Link>
+            <Link to="/company#drive-requests">Drive Requests</Link>
+            <p className="company-menu-title">ACCOUNT</p>
+            <Link to="/company#company-profile">Company Profile</Link>
+            <Link to="/">Logout</Link>
+          </nav>
+        </aside>
+      )}
+      {!returnToCompanyDashboard && <CollegePortalSidebar />}
+
+      <main className={returnToCompanyDashboard ? "company-dashboard-main company-opportunities-main" : "dashboard-main college-page-main college-opportunities-main"}>
+      <header className={returnToCompanyDashboard ? "company-header" : "dashboard-header college-page-header"}>
         <div>
-          <p className="opportunities-eyebrow">CAMPUSCONNECT OPPORTUNITIES</p>
-          <h1>Find your next opportunity</h1>
-          <p>Explore jobs and internships shared by nearby companies.</p>
+          <p className={returnToCompanyDashboard ? undefined : "welcome-text"}>
+            {returnToCompanyDashboard ? "EMPLOYER WORKSPACE" : "COLLEGE PLACEMENT PORTAL"}
+          </p>
+          <h1>{returnToCompanyDashboard ? "Browse opportunities" : "Opportunities"}</h1>
+          <p>
+            {returnToCompanyDashboard
+              ? "Explore active jobs and internships in the campus network."
+              : "Explore jobs, internships, and your saved listings in one place."}
+          </p>
         </div>
-        <Link to="/college">Back to dashboard</Link>
+        <NotificationCenter notifications={[]} scope={returnToCompanyDashboard ? "company" : "college"} />
+        {returnToCompanyDashboard ? (
+          <div className="company-user">
+            <div className="company-avatar">{companyDisplayName.charAt(0).toUpperCase()}</div>
+            <div><strong>{companyDisplayName}</strong><small>Company account</small></div>
+          </div>
+        ) : (
+          <div className="college-user">
+            <div className="college-avatar">{collegeDisplayName.charAt(0).toUpperCase()}</div>
+            <div><strong>{collegeDisplayName}</strong><small>Placement Officer</small></div>
+          </div>
+        )}
       </header>
+
+      {!returnToCompanyDashboard && (
+        <nav className="college-opportunity-tabs" aria-label="Opportunity categories">
+          <Link
+            className={!savedOnly && type === "All" ? "active" : ""}
+            aria-current={!savedOnly && type === "All" ? "page" : undefined}
+            to="/opportunities"
+          >
+            All opportunities <span>{opportunityTabCount("All")}</span>
+          </Link>
+          <Link
+            className={!savedOnly && type === "Job" ? "active" : ""}
+            aria-current={!savedOnly && type === "Job" ? "page" : undefined}
+            to="/opportunities?type=Job"
+          >
+            Job vacancies <span>{opportunityTabCount("Job")}</span>
+          </Link>
+          <Link
+            className={!savedOnly && type === "Internship" ? "active" : ""}
+            aria-current={!savedOnly && type === "Internship" ? "page" : undefined}
+            to="/opportunities?type=Internship"
+          >
+            Internships <span>{opportunityTabCount("Internship")}</span>
+          </Link>
+          <Link
+            className={savedOnly ? "active" : ""}
+            aria-current={savedOnly ? "page" : undefined}
+            to="/opportunities?saved=true"
+          >
+            Saved <span>{savedOpportunityCount}</span>
+          </Link>
+        </nav>
+      )}
 
       <section className="opportunities-filters" aria-label="Filter opportunities">
         <input
@@ -120,11 +261,13 @@ function Opportunities() {
           value={search}
           onChange={(event) => setSearch(event.target.value)}
         />
-        <select value={type} onChange={(event) => setType(event.target.value)}>
-          <option value="All">All types</option>
-          <option value="Job">Jobs</option>
-          <option value="Internship">Internships</option>
-        </select>
+        {returnToCompanyDashboard && (
+          <select value={type} onChange={(event) => updateType(event.target.value)}>
+            <option value="All">All types</option>
+            <option value="Job">Jobs</option>
+            <option value="Internship">Internships</option>
+          </select>
+        )}
         <select value={location} onChange={(event) => setLocation(event.target.value)}>
           <option>All Locations</option>
           {locations.map((itemLocation) => (
@@ -146,14 +289,6 @@ function Opportunities() {
             onChange={(event) => setVerifiedOnly(event.target.checked)}
           />
           Verified only
-        </label>
-        <label className="saved-opportunities-toggle">
-          <input
-            type="checkbox"
-            checked={savedOnly}
-            onChange={(event) => setSavedOnly(event.target.checked)}
-          />
-          Saved only <strong>{savedOpportunityIds.length}</strong>
         </label>
       </section>
 
@@ -213,9 +348,14 @@ function Opportunities() {
               {!item.verified && <p className="opportunity-review-status">Under review</p>}
               <div className="opportunity-report-actions">
                 {reportFeedback[item.id] ? (
-                  <p role="status">{reportFeedback[item.id]}</p>
+                  <p className="opportunity-report-feedback" role="status">
+                    {reportFeedback[item.id]}
+                    {!returnToCompanyDashboard && <> <Link to="/college#listing-reports">Track report</Link></>}
+                  </p>
                 ) : reportedOpportunityIds.has(String(item.id)) ? (
-                  <p>Report submitted · under review</p>
+                  <p className="opportunity-report-feedback">
+                    Report awaiting review · <Link to="/college#listing-reports">Track report</Link>
+                  </p>
                 ) : (
                   <button
                     type="button"
@@ -249,11 +389,25 @@ function Opportunities() {
         </section>
       ) : (
         <div className="opportunities-empty">
-          <h2>No matching opportunities</h2>
-          <p>Try changing your search or filters.</p>
+          <h2>
+            {savedOnly
+              ? "No saved opportunities yet"
+              : type === "Job"
+                ? "No matching job vacancies"
+                : type === "Internship"
+                  ? "No matching internships"
+                  : "No matching opportunities"}
+          </h2>
+          <p>
+            {savedOnly
+              ? "Save a job or internship with the star button and it will appear here."
+              : "Try changing your search or filters. Active listings awaiting review may require turning off “Verified only” to include them."}
+          </p>
+          {savedOnly && <Link className="browse-opportunities-link" to="/opportunities">Browse all opportunities</Link>}
         </div>
       )}
-    </main>
+      </main>
+    </div>
   );
 }
 

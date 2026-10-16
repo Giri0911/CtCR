@@ -1,3 +1,5 @@
+"use client";
+
 function DriveRequestTimeline({ adminStatus, companyStatus }) {
   const reviewStatus = adminStatus || "approved";
   const reviewState = reviewStatus === "pending"

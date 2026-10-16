@@ -1,21 +1,28 @@
+ "use client";
+
 import { useState } from "react";
 import { isOpportunityExpired, loadOpportunities, saveOpportunities } from "../Data/opportunities.js";
 import { loadOpportunityReports, saveOpportunityReports } from "../Data/opportunityReports.js";
+import { loadOrganizationReports, saveOrganizationReports } from "../Data/organizationReports.js";
 import { loadDriveRequests, saveDriveRequests } from "../Data/driveRequests.js";
 import { loadVerificationRequests, saveVerificationRequests } from "../Data/verificationRequests.js";
 import NotificationCenter from "../components/NotificationCenter.jsx";
-import { Link } from "react-router-dom";
+import { Link } from "../next-router-compat.jsx";
 
 function AdminDashboard() {
   const [opportunities, setOpportunities] = useState(loadOpportunities);
   const [opportunityReports, setOpportunityReports] = useState(loadOpportunityReports);
+  const [organizationReports, setOrganizationReports] = useState(loadOrganizationReports);
   const [driveRequests, setDriveRequests] = useState(loadDriveRequests);
   const [verificationRequests, setVerificationRequests] = useState(loadVerificationRequests);
   const [filter, setFilter] = useState("All");
+  const [opportunitySearch, setOpportunitySearch] = useState("");
   const [verificationFilter, setVerificationFilter] = useState("All");
   const [verificationSearch, setVerificationSearch] = useState("");
   const [reportFilter, setReportFilter] = useState("All");
   const [reportSearch, setReportSearch] = useState("");
+  const [organizationReportFilter, setOrganizationReportFilter] = useState("All");
+  const [organizationReportSearch, setOrganizationReportSearch] = useState("");
 
   const verifyOpportunity = (id) => {
     const updated = opportunities.map((item) =>
@@ -70,6 +77,16 @@ function AdminDashboard() {
     setOpportunityReports(updatedReports);
   };
 
+  const reviewOrganizationReport = (reportId, status) => {
+    const updatedReports = organizationReports.map((report) =>
+      report.id === reportId
+        ? { ...report, status, reviewedAt: new Date().toISOString() }
+        : report
+    );
+    saveOrganizationReports(updatedReports);
+    setOrganizationReports(updatedReports);
+  };
+
   const reviewDriveRequest = (id, adminStatus) => {
     const updated = driveRequests.map((request) =>
       request.id === id ? { ...request, adminStatus } : request
@@ -106,8 +123,8 @@ function AdminDashboard() {
     setVerificationRequests(updatedRequests);
   };
 
-  const filteredOpportunities =
-    filter === "Drive Requests" || filter === "Organization Verification" || filter === "Reported Listings"
+  const filteredOpportunitiesByCategory =
+    filter === "Drive Requests" || filter === "Organization Verification" || filter === "Reported Listings" || filter === "Organization Reports"
       ? []
       : filter === "Expired"
       ? opportunities.filter(isOpportunityExpired)
@@ -132,6 +149,25 @@ function AdminDashboard() {
       : opportunities.filter(
           (item) => item.type === "Internship"
         );
+  const opportunityQuery = opportunitySearch.trim().toLowerCase();
+  const filteredOpportunities = filteredOpportunitiesByCategory
+    .filter((item) => !opportunityQuery || [
+      item.title,
+      item.company,
+      item.location,
+      item.mode,
+      item.description,
+      item.eligibility,
+      item.salary,
+      item.status,
+      ...(Array.isArray(item.skills) ? item.skills : [])
+    ].some((value) => String(value || "").toLowerCase().includes(opportunityQuery)))
+    .sort((first, second) => {
+      const firstPending = first.verified === false && !["rejected", "closed"].includes(first.status);
+      const secondPending = second.verified === false && !["rejected", "closed"].includes(second.status);
+      if (firstPending !== secondPending) return firstPending ? -1 : 1;
+      return Number(second.id) - Number(first.id);
+    });
 
   const total = opportunities.length;
 
@@ -186,11 +222,29 @@ function AdminDashboard() {
   });
   const filteredOpportunityReports = opportunityReports.filter((report) => {
     const matchesStatus = reportFilter === "All" ||
-      (reportFilter === "Reviewed" ? report.status !== "pending" : report.status === reportFilter);
+      report.status === reportFilter;
     const query = reportSearch.trim().toLowerCase();
     const matchesSearch = !query || [
       report.title,
       report.company,
+      report.reportedBy,
+      report.reason,
+      report.details
+    ].some((value) => value?.toLowerCase().includes(query));
+    return matchesStatus && matchesSearch;
+  });
+  const pendingOrganizationReports = organizationReports.filter(
+    (report) => report.status === "pending"
+  ).length;
+  const filteredOrganizationReports = organizationReports.filter((report) => {
+    const matchesStatus = organizationReportFilter === "All" ||
+      (organizationReportFilter === "Reviewed"
+        ? report.status !== "pending"
+        : report.status === organizationReportFilter);
+    const query = organizationReportSearch.trim().toLowerCase();
+    const matchesSearch = !query || [
+      report.organizationName,
+      report.organizationLocation,
       report.reportedBy,
       report.reason,
       report.details
@@ -221,8 +275,40 @@ function AdminDashboard() {
       title: "Reported listings",
       message: `${pendingOpportunityReports} listing${pendingOpportunityReports === 1 ? "" : "s"} need review.`,
       tone: "warning"
+    }] : []),
+    ...(pendingOrganizationReports > 0 ? [{
+      id: "pending-organization-reports",
+      title: "Organization reports",
+      message: `${pendingOrganizationReports} report${pendingOrganizationReports === 1 ? "" : "s"} need review.`,
+      tone: "warning"
     }] : [])
   ];
+  const pageHeading = {
+    All: "Opportunity Moderation",
+    Pending: "Pending Review Queue",
+    Verified: "Verified Opportunities",
+    Jobs: "Job Listings",
+    Internships: "Internship Listings",
+    Expired: "Expired Opportunities",
+    Closed: "Closed Opportunities",
+    "Drive Requests": "Drive Request Review",
+    "Organization Verification": "Organization Verification",
+    "Reported Listings": "Reported Listings",
+    "Organization Reports": "Organization Reports"
+  }[filter] || "Admin Workspace";
+  const pageDescription = {
+    All: "Monitor opportunity listings and keep the campus hiring marketplace reliable.",
+    Pending: "Review new company listings and verify accurate, complete opportunities.",
+    Verified: "Review currently verified job and internship listings.",
+    Jobs: "Review job listings submitted by companies.",
+    Internships: "Review internship listings submitted by companies.",
+    Expired: "Review listings that have passed their application deadline.",
+    Closed: "Review company listings that have been closed or reopened.",
+    "Drive Requests": "Review college requests before sending them to companies.",
+    "Organization Verification": "Check organization credentials before marking an account genuine.",
+    "Reported Listings": "Review concerns reported about job and internship listings.",
+    "Organization Reports": "Review concerns reported about organizations in the company directory."
+  }[filter] || "Review CampusXCompany activity.";
 
   return (
     <div className="admin-dashboard">
@@ -232,13 +318,14 @@ function AdminDashboard() {
       <aside className="admin-sidebar">
 
         <div className="admin-logo">
-          <h2>CampusConnect</h2>
+          <h2>CampusXCompany</h2>
           <p>Admin Panel</p>
         </div>
 
         <div className="admin-menu">
 
           <button
+            type="button"
             className={filter === "All" ? "active" : ""}
             onClick={() => setFilter("All")}
           >
@@ -246,13 +333,16 @@ function AdminDashboard() {
           </button>
 
           <button
+            type="button"
             className={filter === "Pending" ? "active" : ""}
             onClick={() => setFilter("Pending")}
           >
-            Pending Review
+            <span>Pending Review</span>
+            {pending > 0 && <span className="admin-menu-count">{pending}</span>}
           </button>
 
           <button
+            type="button"
             className={filter === "Verified" ? "active" : ""}
             onClick={() => setFilter("Verified")}
           >
@@ -260,6 +350,7 @@ function AdminDashboard() {
           </button>
 
           <button
+            type="button"
             className={filter === "Jobs" ? "active" : ""}
             onClick={() => setFilter("Jobs")}
           >
@@ -267,6 +358,7 @@ function AdminDashboard() {
           </button>
 
           <button
+            type="button"
             className={filter === "Internships" ? "active" : ""}
             onClick={() => setFilter("Internships")}
           >
@@ -274,6 +366,7 @@ function AdminDashboard() {
           </button>
 
           <button
+            type="button"
             className={filter === "Expired" ? "active" : ""}
             onClick={() => setFilter("Expired")}
           >
@@ -281,6 +374,7 @@ function AdminDashboard() {
           </button>
 
           <button
+            type="button"
             className={filter === "Closed" ? "active" : ""}
             onClick={() => setFilter("Closed")}
           >
@@ -288,6 +382,7 @@ function AdminDashboard() {
           </button>
 
           <button
+            type="button"
             className={filter === "Drive Requests" ? "active" : ""}
             onClick={() => setFilter("Drive Requests")}
           >
@@ -295,6 +390,7 @@ function AdminDashboard() {
           </button>
 
           <button
+            type="button"
             className={filter === "Organization Verification" ? "active" : ""}
             onClick={() => setFilter("Organization Verification")}
           >
@@ -302,15 +398,24 @@ function AdminDashboard() {
           </button>
 
           <button
+            type="button"
             className={filter === "Reported Listings" ? "active" : ""}
             onClick={() => setFilter("Reported Listings")}
           >
             Reported Listings{pendingOpportunityReports > 0 ? ` (${pendingOpportunityReports})` : ""}
           </button>
 
+          <button
+            type="button"
+            className={filter === "Organization Reports" ? "active" : ""}
+            onClick={() => setFilter("Organization Reports")}
+          >
+            Organization Reports{pendingOrganizationReports > 0 ? ` (${pendingOrganizationReports})` : ""}
+          </button>
+
         </div>
 
-        <nav className="admin-portal-links" aria-label="Other CampusConnect pages">
+        <nav className="admin-portal-links" aria-label="Other CampusXCompany pages">
           <p>PORTALS</p>
           <Link to="/">Home</Link>
           <Link to="/college">College Portal</Link>
@@ -329,37 +434,26 @@ function AdminDashboard() {
 
           <div>
             <p>ADMINISTRATION</p>
-            <h1>
-              {filter === "Drive Requests"
-                ? "Drive Request Review"
-                : filter === "Organization Verification"
-                  ? "Organization Verification"
-                  : filter === "Reported Listings"
-                    ? "Reported Listings"
-                    : filter === "Expired"
-                      ? "Expired Opportunities"
-                        : filter === "Closed"
-                          ? "Closed Opportunities"
-                      : "Verification Dashboard"}
-            </h1>
-            <span>
-              {filter === "Drive Requests"
-                ? "Review college requests before sending them to companies."
-                : filter === "Organization Verification"
-                  ? "Check organization credentials before marking an account genuine."
-                  : filter === "Reported Listings"
-                    ? "Review concerns reported about job and internship listings."
-                    : filter === "Expired"
-                      ? "Review listings that have passed their application deadline."
-                        : filter === "Closed"
-                          ? "Review company listings that have been closed or reopened."
-                      : "Review and verify company opportunities."}
-            </span>
+            <h1>{pageHeading}</h1>
+            <span>{pageDescription}</span>
           </div>
 
-          <NotificationCenter notifications={adminNotifications} />
+          <NotificationCenter notifications={adminNotifications} scope="admin" />
 
         </div>
+
+        {pending > 0 && filter !== "Pending" && (
+          <section className="admin-review-banner" aria-label="Pending moderation queue">
+            <div>
+              <span className="admin-review-indicator" aria-hidden="true">!</span>
+              <div>
+                <strong>{pending} {pending === 1 ? "listing needs" : "listings need"} your review</strong>
+                <p>New opportunities are prioritized at the top of the review queue.</p>
+              </div>
+            </div>
+            <button type="button" onClick={() => setFilter("Pending")}>Open review queue <span aria-hidden="true">→</span></button>
+          </section>
+        )}
 
         {/* Statistics */}
 
@@ -380,6 +474,25 @@ function AdminDashboard() {
             <div className="admin-stat">
               <span>Not Verified</span>
               <strong>{rejectedVerificationRequests}</strong>
+            </div>
+          </div>
+        ) : filter === "Organization Reports" ? (
+          <div className="admin-stats">
+            <div className="admin-stat">
+              <span>Total Reports</span>
+              <strong>{organizationReports.length}</strong>
+            </div>
+            <div className="admin-stat">
+              <span>Awaiting Review</span>
+              <strong>{pendingOrganizationReports}</strong>
+            </div>
+            <div className="admin-stat">
+              <span>Reviewed</span>
+              <strong>{organizationReports.filter((report) => report.status === "reviewed").length}</strong>
+            </div>
+            <div className="admin-stat">
+              <span>Dismissed</span>
+              <strong>{organizationReports.filter((report) => report.status === "dismissed").length}</strong>
             </div>
           </div>
         ) : filter === "Reported Listings" ? (
@@ -465,6 +578,8 @@ function AdminDashboard() {
                 ? "College Drive Requests"
                 : filter === "Organization Verification"
                   ? "Verification Applications"
+                  : filter === "Organization Reports"
+                    ? "Organization Reports"
                   : filter === "Reported Listings"
                     ? "Listing Reports"
                     : filter === "Expired"
@@ -478,13 +593,102 @@ function AdminDashboard() {
                 ? `${driveRequests.length} ${driveRequests.length === 1 ? "request" : "requests"}`
                 : filter === "Organization Verification"
                   ? `${filteredVerificationRequests.length} ${filteredVerificationRequests.length === 1 ? "application" : "applications"}`
+                  : filter === "Organization Reports"
+                    ? `${filteredOrganizationReports.length} ${filteredOrganizationReports.length === 1 ? "report" : "reports"}`
                   : filter === "Reported Listings"
                     ? `${filteredOpportunityReports.length} ${filteredOpportunityReports.length === 1 ? "report" : "reports"}`
                   : `${filteredOpportunities.length} opportunities`}
             </span>
           </div>
 
-          {filter === "Reported Listings" ? (
+          {filter !== "Drive Requests" &&
+            filter !== "Organization Verification" &&
+            filter !== "Reported Listings" &&
+            filter !== "Organization Reports" && (
+              <div className="admin-opportunity-search">
+                <input
+                  type="search"
+                  value={opportunitySearch}
+                  onChange={(event) => setOpportunitySearch(event.target.value)}
+                  placeholder="Search opportunities, companies, skills..."
+                  aria-label="Search opportunities"
+                />
+                {opportunitySearch && (
+                  <button type="button" onClick={() => setOpportunitySearch("")}>Clear search</button>
+                )}
+              </div>
+            )}
+
+          {filter === "Organization Reports" ? (
+            <>
+              <div className="verification-review-controls">
+                <input
+                  type="search"
+                  value={organizationReportSearch}
+                  onChange={(event) => setOrganizationReportSearch(event.target.value)}
+                  placeholder="Search organizations, reporters, or concerns..."
+                  aria-label="Search organization reports"
+                />
+                <select
+                  value={organizationReportFilter}
+                  onChange={(event) => setOrganizationReportFilter(event.target.value)}
+                  aria-label="Filter organization reports by status"
+                >
+                  <option>All</option>
+                  <option>pending</option>
+                  <option>Reviewed</option>
+                  <option>reviewed</option>
+                  <option>dismissed</option>
+                </select>
+              </div>
+              {filteredOrganizationReports.length === 0 ? (
+                <div className="admin-empty">
+                  <h3>{organizationReports.length === 0 ? "No organization reports" : "No matching reports"}</h3>
+                  <p>{organizationReports.length === 0
+                    ? "Reports submitted from the company directory will appear here for review."
+                    : "Try changing your search or report status filter."}</p>
+                </div>
+              ) : (
+                <div className="admin-opportunity-list">
+                  {[...filteredOrganizationReports]
+                    .sort((first, second) => {
+                      if (first.status === "pending" && second.status !== "pending") return -1;
+                      if (second.status === "pending" && first.status !== "pending") return 1;
+                      return (second.reportedAt || "").localeCompare(first.reportedAt || "");
+                    })
+                    .map((report) => (
+                      <article className="admin-opportunity-card admin-report-card" key={report.id}>
+                        <div className="admin-opportunity-info">
+                          <div className="admin-title-row">
+                            <h3>{report.organizationName}</h3>
+                            <span className={`admin-drive-status admin-drive-${report.status}`}>
+                              {report.status === "pending" ? "Awaiting review" : report.status}
+                            </span>
+                          </div>
+                          <p className="admin-company">{report.organizationLocation}</p>
+                          <p className="admin-report-reporter">Reported by {report.reportedBy}</p>
+                          <div className="admin-details">
+                            <span>Reason: {report.reason}</span>
+                            <span>Reported: {report.reportedAt ? new Date(report.reportedAt).toLocaleString() : "Date unavailable"}</span>
+                            <span>{report.details}</span>
+                          </div>
+                        </div>
+                        {report.status === "pending" && (
+                          <div className="admin-actions">
+                            <button className="verify-btn" onClick={() => reviewOrganizationReport(report.id, "dismissed")}>
+                              Dismiss
+                            </button>
+                            <button className="reject-btn" onClick={() => reviewOrganizationReport(report.id, "reviewed")}>
+                              Mark reviewed
+                            </button>
+                          </div>
+                        )}
+                      </article>
+                    ))}
+                </div>
+              )}
+            </>
+          ) : filter === "Reported Listings" ? (
             <>
               <div className="verification-review-controls">
                 <input
@@ -500,11 +704,16 @@ function AdminDashboard() {
                   aria-label="Filter listing reports by status"
                 >
                   <option>All</option>
-                  <option>pending</option>
-                  <option>Reviewed</option>
-                  <option>removed</option>
-                  <option>dismissed</option>
+                  <option value="pending">Awaiting review</option>
+                  <option value="removed">Listing removed</option>
+                  <option value="dismissed">Report dismissed</option>
+                  <option value="reviewed">Reviewed (legacy)</option>
                 </select>
+              </div>
+              <div className="admin-report-summary" aria-label="Listing report totals">
+                <div><span>Awaiting review</span><strong>{pendingOpportunityReports}</strong></div>
+                <div><span>Listing removed</span><strong>{opportunityReports.filter((report) => report.status === "removed").length}</strong></div>
+                <div><span>Dismissed</span><strong>{opportunityReports.filter((report) => report.status === "dismissed").length}</strong></div>
               </div>
             {filteredOpportunityReports.length === 0 ? (
               <div className="admin-empty">
@@ -527,10 +736,19 @@ function AdminDashboard() {
                         <div className="admin-title-row">
                           <h3>{report.title}</h3>
                           <span className={`admin-drive-status admin-drive-${report.status === "pending" ? "pending" : report.status}`}>
-                            {report.status === "pending" ? "Awaiting review" : report.status}
+                            {report.status === "pending"
+                              ? "Awaiting review"
+                              : report.status === "removed"
+                                ? "Listing removed"
+                                : report.status === "dismissed"
+                                  ? "Report dismissed"
+                                  : "Reviewed"}
                           </span>
                         </div>
-                        <p className="admin-company">{report.company}</p>
+                        <p className="admin-company">
+                          {report.company}{report.type ? ` · ${report.type}` : ""}
+                          {report.opportunityId != null ? ` · Listing #${report.opportunityId}` : ""}
+                        </p>
                         {report.reportedBy && <p className="admin-report-reporter">Reported by {report.reportedBy}</p>}
                         <div className="admin-details">
                           <span>Reason: {report.reason}</span>

@@ -1,5 +1,7 @@
+ "use client";
+
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "../next-router-compat.jsx";
 import { loadOpportunities, saveOpportunities } from "../Data/opportunities.js";
 
 function getDefaultExpiryDate() {

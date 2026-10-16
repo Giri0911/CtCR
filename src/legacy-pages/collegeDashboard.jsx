@@ -1,12 +1,16 @@
+ "use client";
+
 import { useEffect, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation } from "../next-router-compat.jsx";
 import "../App.css";
 import { loadDriveRequests, saveDriveRequests } from "../Data/driveRequests.js";
+import { loadOpportunityReports } from "../Data/opportunityReports.js";
 import { isOpportunityActive, loadOpportunities } from "../Data/opportunities.js";
 import { loadVerificationRequests, saveVerificationRequests } from "../Data/verificationRequests.js";
 import { MAX_VERIFICATION_DOCUMENTS, MAX_VERIFICATION_DOCUMENT_SIZE, readVerificationDocument } from "../Data/verificationRequests.js";
 import NotificationCenter from "../components/NotificationCenter.jsx";
 import DriveRequestTimeline from "../components/DriveRequestTimeline.jsx";
+import { CollegePortalSidebar } from "../components/CollegePortalLayout.jsx";
 
 const emptyCollegeProfile = {
   name: "",
@@ -41,6 +45,7 @@ function CollegeDashboard() {
   const [expectedStudents, setExpectedStudents] = useState("");
   const [driveNote, setDriveNote] = useState("");
   const [driveRequests, setDriveRequests] = useState(loadDriveRequests);
+  const [opportunityReports] = useState(loadOpportunityReports);
   const [profile, setProfile] = useState(loadCollegeProfile);
   const [requestFeedback, setRequestFeedback] = useState("");
 
@@ -128,11 +133,32 @@ function CollegeDashboard() {
   const latestOpportunities = [...verifiedOpportunities]
     .sort((first, second) => second.id - first.id)
     .slice(0, 3);
+  const today = new Date();
+  const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const closingSoonOpportunities = verifiedOpportunities
+    .filter((item) => item.expiryDate)
+    .map((item) => {
+      const deadline = new Date(`${item.expiryDate}T00:00:00`);
+      const daysRemaining = Math.round((deadline.getTime() - todayStart.getTime()) / 86_400_000);
+      return { ...item, daysRemaining };
+    })
+    .filter((item) => item.daysRemaining >= 0 && item.daysRemaining <= 14)
+    .sort((first, second) => first.daysRemaining - second.daysRemaining)
+    .slice(0, 3);
   const connectedCompanies = new Set(
     driveRequests
       .filter((request) => request.status === "accepted")
       .map((request) => request.company)
   ).size;
+  const myOpportunityReports = opportunityReports
+    .filter((report) => {
+      const reporterEmail = report.reporterEmail?.toLowerCase();
+      if (reporterEmail && profile.email) {
+        return reporterEmail === profile.email.toLowerCase();
+      }
+      return report.reportedBy === (profile.name || "College representative");
+    })
+    .sort((first, second) => (second.reportedAt || "").localeCompare(first.reportedAt || ""));
 
   const filteredCompanies = companiesWithOpportunities.filter((company) => {
     const matchesSearch =
@@ -295,55 +321,7 @@ function CollegeDashboard() {
 
       {/* Sidebar */}
 
-      <aside className="sidebar">
-
-        <div className="dashboard-logo">
-          Campus<span>Connect</span>
-        </div>
-
-        <nav className="college-sidebar-nav" aria-label="College navigation">
-          <p className="menu-title">MAIN MENU</p>
-
-          <Link className={!showingProfile && !showingDriveRequests ? "active-menu" : ""} to="/college">
-            Dashboard
-          </Link>
-
-          <Link to="/college/companies">
-            Discover Companies
-          </Link>
-
-          <Link to="/opportunities">
-            All Opportunities
-          </Link>
-
-          <Link to="/opportunities?type=Job">
-            Job Vacancies
-          </Link>
-
-          <Link to="/opportunities?type=Internship">
-            Internships
-          </Link>
-
-          <Link to="/opportunities?saved=true">
-            Saved Opportunities
-          </Link>
-
-          <Link className={showingDriveRequests ? "active-menu" : ""} to="/college#drive-requests">
-            Drive Requests
-          </Link>
-
-          <p className="menu-title">ACCOUNT</p>
-
-          <Link className={showingProfile ? "active-menu" : ""} to="/college/college-profile">
-            College Profile
-          </Link>
-
-          <Link to="/">
-            Logout
-          </Link>
-        </nav>
-
-      </aside>
+      <CollegePortalSidebar />
 
       {/* Main Content */}
 
@@ -354,11 +332,11 @@ function CollegeDashboard() {
         <header className="dashboard-header">
 
           <div>
-            <p className="welcome-text">College Dashboard</p>
-            <h1>Good Morning 👋</h1>
+            <p className="welcome-text">COLLEGE PLACEMENT PORTAL</p>
+            <h1>Welcome back 👋</h1>
           </div>
 
-          <NotificationCenter notifications={notifications} />
+          <NotificationCenter notifications={notifications} scope="college" />
 
           <div className="college-user">
             <div className="college-avatar">{(profile.name || "College Admin").charAt(0).toUpperCase()}</div>
@@ -370,6 +348,18 @@ function CollegeDashboard() {
           </div>
 
         </header>
+
+        <section className="college-welcome-panel" aria-label="College portal shortcuts">
+          <div>
+            <p>YOUR PLACEMENT WORKSPACE</p>
+            <h2>Build stronger campus connections.</h2>
+            <span>Discover verified employers, explore opportunities, and coordinate campus drives.</span>
+          </div>
+          <div className="college-welcome-actions">
+            <Link to="/opportunities">Explore opportunities <span aria-hidden="true">→</span></Link>
+            <Link to="/college/companies">Discover companies</Link>
+          </div>
+        </section>
 
         <section className="college-profile-section" id="college-profile">
           <div className="college-profile-heading">
@@ -501,7 +491,7 @@ function CollegeDashboard() {
             {verificationStatus === "approved" ? (
               <p>Your college has been verified as a genuine institution.</p>
             ) : verificationStatus === "pending" ? (
-              <p>Your application is with the CampusConnect admin team for review.</p>
+              <p>Your application is with the CampusXCompany admin team for review.</p>
             ) : profile.name && profile.email ? (
               <>
                 <p>Submit your accreditation details so an admin can confirm your institution.</p>
@@ -664,6 +654,51 @@ function CollegeDashboard() {
             </div>
           </div>
 
+        </section>
+
+        <section className="college-closing-soon" aria-labelledby="college-closing-title">
+          <div className="college-closing-heading">
+            <div>
+              <p className="college-profile-eyebrow">UPCOMING DEADLINES</p>
+              <h2 id="college-closing-title">Closing soon</h2>
+              <p>Verified opportunities with application deadlines in the next 14 days.</p>
+            </div>
+            <Link to="/opportunities">View all opportunities <span aria-hidden="true">→</span></Link>
+          </div>
+
+          {closingSoonOpportunities.length > 0 ? (
+            <div className="college-closing-list">
+              {closingSoonOpportunities.map((item) => (
+                <article className="college-closing-item" key={item.id}>
+                  <div className="college-closing-company-mark" aria-hidden="true">
+                    {item.company.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="college-closing-details">
+                    <strong>{item.title}</strong>
+                    <span>{item.company} · {item.type}</span>
+                  </div>
+                  <div className="college-closing-deadline">
+                    <strong>
+                      {item.daysRemaining === 0
+                        ? "Closes today"
+                        : `${item.daysRemaining} day${item.daysRemaining === 1 ? "" : "s"} left`}
+                    </strong>
+                    <span>
+                      {new Date(`${item.expiryDate}T00:00:00`).toLocaleDateString(undefined, {
+                        month: "short",
+                        day: "numeric"
+                      })}
+                    </span>
+                  </div>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <div className="college-closing-empty">
+              <span aria-hidden="true">✓</span>
+              <p>No verified opportunities are closing in the next 14 days.</p>
+            </div>
+          )}
         </section>
 
         {/* Companies */}
@@ -877,6 +912,66 @@ function CollegeDashboard() {
               </article>
             ))}
           </div>
+        </section>
+
+        <section className="college-listing-reports-section" id="listing-reports">
+          <div className="section-top">
+            <div>
+              <h2>My Listing Reports</h2>
+              <p>Track reports you have submitted about inaccurate or concerning listings.</p>
+            </div>
+            <Link to="/opportunities">Browse opportunities</Link>
+          </div>
+
+          <div className="college-report-summary" aria-label="Listing report summary">
+            <div>
+              <span>Total reports</span>
+              <strong>{myOpportunityReports.length}</strong>
+            </div>
+            <div>
+              <span>Awaiting review</span>
+              <strong>{myOpportunityReports.filter((report) => report.status === "pending").length}</strong>
+            </div>
+            <div>
+              <span>Resolved</span>
+              <strong>{myOpportunityReports.filter((report) => report.status !== "pending").length}</strong>
+            </div>
+          </div>
+
+          {myOpportunityReports.length === 0 ? (
+            <div className="college-report-empty">
+              <h3>No listing reports yet</h3>
+              <p>Use “Report listing” on an opportunity if you notice inaccurate, expired, or suspicious information. You can follow its review here.</p>
+              <Link to="/opportunities">Explore opportunities</Link>
+            </div>
+          ) : (
+            <div className="college-report-list">
+              {myOpportunityReports.map((report) => (
+                <article className="college-report-item" key={report.id}>
+                  <div className="college-report-item-heading">
+                    <div>
+                      <h3>{report.title || "Opportunity listing"}</h3>
+                      <p>{report.company || "Company unavailable"}{report.reason ? ` · ${report.reason}` : ""}</p>
+                    </div>
+                    <span className={`college-report-status report-status-${report.status || "pending"}`}>
+                      {report.status === "pending"
+                        ? "Awaiting review"
+                        : report.status === "removed"
+                          ? "Listing removed"
+                          : report.status === "dismissed"
+                            ? "Report dismissed"
+                            : "Reviewed"}
+                    </span>
+                  </div>
+                  {report.details && <p className="college-report-details">{report.details}</p>}
+                  <small>
+                    Submitted {report.reportedAt ? new Date(report.reportedAt).toLocaleString() : "date unavailable"}
+                    {report.reviewedAt && ` · Reviewed ${new Date(report.reviewedAt).toLocaleString()}`}
+                  </small>
+                </article>
+              ))}
+            </div>
+          )}
         </section>
 
         {/* Recent Opportunities */}

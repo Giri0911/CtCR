@@ -1,5 +1,7 @@
+ "use client";
+
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "../next-router-compat.jsx";
 
 function Register() {
   const [role, setRole] = useState("college");
@@ -37,7 +39,7 @@ function Register() {
     <div className="auth-page">
       <div className="auth-box">
 
-        <h1>CampusConnect</h1>
+        <h1>CampusXCompany</h1>
         <h2>Create Account</h2>
 
         <form onSubmit={handleRegister}>

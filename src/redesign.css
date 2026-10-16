@@ -189,7 +189,7 @@ button {
 .college-dashboard,
 .company-dashboard {
   display: grid;
-  grid-template-columns: 246px minmax(0, 1fr);
+  grid-template-columns: 252px minmax(0, 1fr);
 }
 
 .sidebar,
@@ -2221,6 +2221,23 @@ textarea:focus {
     text-align: center;
   }
 
+  .notification-restore {
+    margin-top: 8px;
+    padding: 7px 10px;
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    background: var(--surface);
+    color: var(--green);
+    cursor: pointer;
+    font-size: 10px;
+    font-weight: 800;
+  }
+
+  .notification-restore:hover {
+    border-color: var(--green);
+    background: var(--green-soft);
+  }
+
   .admin-stats {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -2401,5 +2418,739 @@ textarea:focus {
     line-height: 1.25;
     overflow-wrap: anywhere;
     text-align: center;
+  }
+}
+
+/* Shared visual refinements */
+
+:root {
+  --page: #f4f7f8;
+  --surface-muted: #f8fbfb;
+  --ink: #193238;
+  --muted: #71858a;
+  --line: #dce7e8;
+  --green-soft: #e4f3f3;
+}
+
+body {
+  background: var(--page);
+  color: var(--ink);
+}
+
+.college-dashboard,
+.company-dashboard,
+.admin-dashboard {
+  min-height: 100vh;
+  background: var(--page);
+}
+
+.sidebar,
+.company-sidebar {
+  background: linear-gradient(180deg, #173b42 0%, #123239 100%);
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.dashboard-main,
+.company-dashboard-main {
+  width: auto;
+  margin: 0;
+  padding: 32px clamp(18px, 2.5vw, 36px) 56px;
+}
+
+.college-dashboard .dashboard-main,
+.company-dashboard .company-dashboard-main {
+  width: auto;
+  margin-left: 0;
+  padding: 32px clamp(18px, 2.5vw, 36px) 56px;
+}
+
+.admin-dashboard .admin-main {
+  width: auto;
+  margin-left: 252px;
+  padding-right: clamp(18px, 2.5vw, 36px);
+  padding-left: clamp(18px, 2.5vw, 36px);
+}
+
+@media (max-width: 900px) {
+  .dashboard-main,
+  .company-dashboard-main,
+  .admin-dashboard .admin-main {
+    width: 100%;
+    margin: 0;
+    padding: 24px 18px 44px;
+  }
+
+  .admin-dashboard .admin-main {
+    margin-left: 0;
+  }
+}
+
+@media (max-width: 520px) {
+  .dashboard-main,
+  .company-dashboard-main,
+  .admin-dashboard .admin-main {
+    padding: 20px 14px 36px;
+  }
+}
+
+.dashboard-header,
+.company-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 24px;
+  min-height: 72px;
+  margin-bottom: 32px;
+}
+
+.dashboard-header h1,
+.company-header h1,
+.admin-header h1 {
+  color: var(--ink);
+  font-size: clamp(26px, 3vw, 36px);
+  line-height: 1.12;
+}
+
+.dashboard-stat,
+.company-stat-card,
+.college-profile-section,
+.company-profile-card,
+.company-actions,
+.company-form-card,
+.company-opportunities-section,
+.recent-section,
+.companies-section,
+.admin-section,
+.admin-stat {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: 0 8px 24px rgba(31, 69, 75, 0.05);
+}
+
+.dashboard-stat,
+.company-stat-card,
+.company-welcome-panel,
+.college-profile-section,
+.company-profile-card,
+.company-actions,
+.company-form-card,
+.company-opportunities-section,
+.recent-section,
+.companies-section,
+.admin-section {
+  background: var(--surface);
+}
+
+.company-welcome-panel {
+  border: 1px solid #cfe5e5;
+  border-radius: 16px;
+  box-shadow: 0 10px 28px rgba(31, 69, 75, 0.06);
+}
+
+.company-card,
+.directory-card,
+.opportunity-card,
+.admin-opportunity-card {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: 0 6px 18px rgba(31, 69, 75, 0.04);
+}
+
+.college-user,
+.company-user {
+  gap: 10px;
+  min-width: 168px;
+  padding: 8px 12px 8px 8px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+.notification-center {
+  z-index: 100;
+}
+
+.notification-trigger {
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: 0 4px 12px rgba(31, 69, 75, 0.05);
+}
+
+.notification-trigger:hover,
+.notification-trigger[aria-expanded="true"] {
+  border-color: #8ac7c9;
+  background: var(--green-soft);
+  box-shadow: 0 6px 16px rgba(8, 127, 140, 0.12);
+}
+
+.notification-popover {
+  position: fixed;
+  top: auto;
+  right: auto;
+  width: min(390px, calc(100vw - 24px));
+  border: 1px solid #d2e1e2;
+  border-radius: 16px;
+  box-shadow: 0 22px 55px rgba(24, 59, 66, 0.2);
+}
+
+.notification-popover-heading {
+  padding: 17px 18px 14px;
+  background: var(--surface-muted);
+}
+
+.notification-heading-actions,
+.notification-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.notification-mark-read,
+.notification-close,
+.notification-item-actions button {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.notification-mark-read {
+  padding: 6px 8px;
+  border-radius: 7px;
+  color: var(--green);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.notification-mark-read:hover {
+  background: var(--green-soft);
+}
+
+.notification-empty {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  padding: 32px 18px;
+  text-align: center;
+}
+
+.notification-empty-icon {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  margin-bottom: 4px;
+  border-radius: 50%;
+  background: var(--green-soft);
+  color: var(--green);
+}
+
+.notification-item {
+  display: grid;
+  grid-template-columns: 8px minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 10px;
+  padding: 15px 16px;
+  border-left: 0;
+}
+
+.notification-item:hover {
+  background: #f8fbfb;
+}
+
+.notification-item.is-read {
+  opacity: 0.68;
+}
+
+.notification-status-dot {
+  width: 8px;
+  height: 8px;
+  margin-top: 5px;
+  border-radius: 50%;
+  background: var(--green);
+}
+
+.notification-item.is-read .notification-status-dot {
+  background: #bdcacc;
+}
+
+.notification-item-content {
+  min-width: 0;
+}
+
+.notification-item-actions a {
+  padding: 5px 7px;
+  border-radius: 6px;
+  background: var(--green-soft);
+  font-size: 10px;
+}
+
+.notification-item-actions button {
+  padding: 2px 4px;
+  color: var(--muted);
+  font-size: 17px;
+}
+
+@media (max-width: 760px) {
+  .dashboard-main,
+  .company-dashboard-main {
+    padding: 24px 16px 44px;
+  }
+
+  .dashboard-header,
+  .company-header {
+    grid-template-columns: 1fr auto;
+    gap: 14px;
+    margin-bottom: 24px;
+  }
+
+  .dashboard-header .notification-center,
+  .company-header .notification-center {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .college-user,
+  .company-user {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
+  .notification-trigger > span:not(.notification-bell):not(.notification-count) {
+    display: none;
+  }
+
+  .notification-trigger {
+    width: 44px;
+    padding: 0;
+  }
+}
+
+/* Dashboard card and alignment system */
+
+.college-dashboard .dashboard-main,
+.company-dashboard .company-dashboard-main,
+.admin-dashboard .admin-main {
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+.college-dashboard .dashboard-stats,
+.company-dashboard .company-stats,
+.admin-dashboard .admin-stats {
+  align-items: stretch;
+}
+
+.college-dashboard .dashboard-stat,
+.company-dashboard .company-stat-card,
+.admin-dashboard .admin-stat {
+  min-width: 0;
+  min-height: 118px;
+}
+
+.college-dashboard .dashboard-stat > div:last-child,
+.company-dashboard .company-stat-card > div:last-child {
+  min-width: 0;
+}
+
+.college-dashboard .companies-section,
+.college-dashboard .recent-section,
+.college-dashboard .college-closing-soon,
+.college-dashboard .college-listing-reports-section {
+  width: 100%;
+  min-width: 0;
+}
+
+.college-dashboard .company-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: stretch;
+  gap: 16px;
+}
+
+.college-dashboard .company-card {
+  display: flex;
+  min-width: 0;
+  min-height: 100%;
+  flex-direction: column;
+}
+
+.college-dashboard .company-card h3,
+.college-dashboard .company-card .company-industry,
+.college-dashboard .company-card .company-location {
+  overflow-wrap: anywhere;
+}
+
+.college-dashboard .college-company-actions {
+  display: grid;
+  grid-template-columns: 1fr;
+  margin-top: auto;
+}
+
+.college-dashboard .directory-page {
+  width: 100%;
+  max-width: none;
+  padding: 0;
+}
+
+.college-dashboard .directory-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: stretch;
+  gap: 16px;
+}
+
+.college-dashboard .directory-card {
+  display: flex;
+  min-width: 0;
+  min-height: 100%;
+  flex-direction: column;
+}
+
+.college-dashboard .directory-card h3,
+.college-dashboard .directory-description {
+  overflow-wrap: anywhere;
+}
+
+.college-dashboard .directory-card-actions {
+  margin-top: auto;
+}
+
+.dashboard-header,
+.company-header,
+.admin-dashboard .admin-header {
+  min-width: 0;
+}
+
+.dashboard-header > :first-child,
+.company-header > :first-child,
+.admin-dashboard .admin-header > :first-child {
+  min-width: 0;
+}
+
+.admin-dashboard .admin-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+}
+
+.admin-dashboard .notification-center {
+  justify-self: end;
+}
+
+@media (max-width: 1180px) {
+  .college-dashboard .company-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .college-dashboard .directory-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .college-dashboard .dashboard-stats,
+  .company-dashboard .company-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .college-dashboard .company-grid,
+  .college-dashboard .directory-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-dashboard .admin-header {
+    grid-template-columns: 1fr auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .college-dashboard .dashboard-stats,
+  .company-dashboard .company-stats {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Phone layout */
+
+@media (max-width: 700px) {
+  html,
+  body {
+    min-width: 320px;
+    overflow-x: hidden;
+  }
+
+  .college-dashboard,
+  .company-dashboard,
+  .admin-dashboard {
+    display: block;
+  }
+
+  .college-dashboard .sidebar,
+  .company-dashboard .company-sidebar,
+  .admin-dashboard .admin-sidebar {
+    position: sticky;
+    top: 0;
+    z-index: 80;
+    display: block;
+    width: 100%;
+    height: auto;
+    min-height: 0;
+    max-height: none;
+    padding: 12px 14px 8px;
+    overflow: visible;
+  }
+
+  .college-dashboard .dashboard-logo,
+  .company-dashboard .company-dashboard-logo,
+  .admin-dashboard .admin-logo {
+    padding: 0 4px 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    font-size: 18px;
+  }
+
+  .college-dashboard .college-sidebar-nav,
+  .company-dashboard .company-sidebar-nav,
+  .admin-dashboard .admin-menu,
+  .admin-dashboard .admin-portal-links {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 8px 0 0;
+    padding: 0 0 3px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .college-dashboard .college-sidebar-nav::-webkit-scrollbar,
+  .company-dashboard .company-sidebar-nav::-webkit-scrollbar,
+  .admin-dashboard .admin-menu::-webkit-scrollbar,
+  .admin-dashboard .admin-portal-links::-webkit-scrollbar {
+    display: none;
+  }
+
+  .college-dashboard .menu-title,
+  .company-dashboard .company-menu-title,
+  .admin-dashboard .admin-portal-links > p {
+    display: none;
+  }
+
+  .college-dashboard .sidebar a,
+  .company-dashboard .company-sidebar a,
+  .admin-dashboard .admin-menu button,
+  .admin-dashboard .admin-portal-links a {
+    flex: 0 0 auto;
+    width: auto;
+    min-height: 38px;
+    margin: 0;
+    padding: 9px 11px;
+    border-radius: 8px;
+    font-size: 11px;
+    white-space: nowrap;
+  }
+
+  .college-dashboard .dashboard-main,
+  .company-dashboard .company-dashboard-main,
+  .admin-dashboard .admin-main {
+    width: 100%;
+    margin: 0;
+    padding: 22px 14px 40px;
+  }
+
+  .dashboard-header,
+  .company-header,
+  .admin-dashboard .admin-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 44px;
+    align-items: start;
+    gap: 12px;
+    min-height: 0;
+    margin-bottom: 22px;
+    animation: none;
+    transform: none;
+  }
+
+  .dashboard-header > :first-child,
+  .company-header > :first-child,
+  .admin-dashboard .admin-header > :first-child {
+    grid-column: 1;
+    min-width: 0;
+  }
+
+  .dashboard-header .notification-center,
+  .company-header .notification-center,
+  .admin-dashboard .notification-center {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: end;
+  }
+
+  .college-user,
+  .company-user {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .admin-dashboard .admin-header > div:first-child > span {
+    display: block;
+    line-height: 1.45;
+  }
+
+  .dashboard-header h1,
+  .company-header h1,
+  .admin-dashboard .admin-header h1 {
+    font-size: 25px;
+    overflow-wrap: anywhere;
+  }
+
+  .college-dashboard .college-welcome-panel,
+  .company-dashboard .company-welcome-panel {
+    display: grid;
+    gap: 18px;
+    margin-top: 16px;
+    padding: 20px 16px;
+  }
+
+  .college-welcome-actions,
+  .company-welcome-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+
+  .college-dashboard .dashboard-search,
+  .college-dashboard .directory-search,
+  .company-dashboard .dashboard-search,
+  .opportunities-filters,
+  .admin-dashboard .admin-opportunity-search {
+    display: grid;
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+
+  .dashboard-search > *,
+  .directory-search > *,
+  .opportunities-filters > *,
+  .admin-dashboard .admin-opportunity-search > * {
+    width: 100%;
+    min-width: 0;
+    grid-column: 1;
+  }
+
+  .college-dashboard .dashboard-stats,
+  .company-dashboard .company-stats,
+  .admin-dashboard .admin-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .college-dashboard .dashboard-stat,
+  .company-dashboard .company-stat-card,
+  .admin-dashboard .admin-stat {
+    min-height: 104px;
+    padding: 14px;
+  }
+
+  .college-dashboard .company-grid,
+  .college-dashboard .directory-grid,
+  .company-dashboard .company-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .college-dashboard .company-card,
+  .college-dashboard .directory-card,
+  .company-dashboard .company-card {
+    width: 100%;
+  }
+
+  .section-top,
+  .directory-result-heading,
+  .college-closing-heading,
+  .organization-verification-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .opportunity-table {
+    overflow-x: auto;
+  }
+
+  .opportunity-table .table-header,
+  .opportunity-table .table-row {
+    min-width: 620px;
+  }
+
+  .college-profile-form,
+  .company-profile-edit-form,
+  .verification-application-form,
+  .drive-request-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .college-profile-form > *,
+  .company-profile-edit-form > *,
+  .verification-application-form > *,
+  .drive-request-fields > * {
+    grid-column: 1;
+  }
+
+  .company-profile-card {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .company-profile-info {
+    width: 100%;
+  }
+
+  .company-profile-form-actions,
+  .admin-dashboard .admin-actions {
+    flex-wrap: wrap;
+  }
+
+  .company-profile-form-actions button,
+  .admin-dashboard .admin-actions button {
+    flex: 1 1 130px;
+    min-height: 42px;
+  }
+
+  .drive-request-row,
+  .company-drive-request,
+  .admin-opportunity-card,
+  .admin-verification-card {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .drive-request-timeline {
+    grid-template-columns: 1fr;
+  }
+
+  .notification-popover {
+    width: min(360px, calc(100vw - 24px));
+  }
+}
+
+@media (max-width: 480px) {
+  .college-dashboard .dashboard-stats,
+  .company-dashboard .company-stats,
+  .admin-dashboard .admin-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .college-dashboard .dashboard-stat,
+  .company-dashboard .company-stat-card,
+  .admin-dashboard .admin-stat {
+    min-height: 88px;
+  }
+
+  .notification-popover {
+    width: calc(100vw - 24px);
   }
 }
