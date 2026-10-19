@@ -1,11 +1,11 @@
  "use client";
 
-import { useState } from "react";
-import { isOpportunityExpired, loadOpportunities, saveOpportunities } from "../Data/opportunities.js";
-import { loadOpportunityReports, saveOpportunityReports } from "../Data/opportunityReports.js";
-import { loadOrganizationReports, saveOrganizationReports } from "../Data/organizationReports.js";
-import { loadDriveRequests, saveDriveRequests } from "../Data/driveRequests.js";
-import { loadVerificationRequests, saveVerificationRequests } from "../Data/verificationRequests.js";
+import { useEffect, useState } from "react";
+import { hydrateOpportunities, isOpportunityExpired, loadOpportunities, saveOpportunities } from "../Data/opportunities.js";
+import { hydrateOpportunityReports, loadOpportunityReports, saveOpportunityReports } from "../Data/opportunityReports.js";
+import { hydrateOrganizationReports, loadOrganizationReports, saveOrganizationReports } from "../Data/organizationReports.js";
+import { hydrateDriveRequests, loadDriveRequests, saveDriveRequests } from "../Data/driveRequests.js";
+import { hydrateVerificationRequests, loadVerificationRequests, saveVerificationRequests } from "../Data/verificationRequests.js";
 import NotificationCenter from "../components/NotificationCenter.jsx";
 import { Link } from "../next-router-compat.jsx";
 
@@ -23,6 +23,21 @@ function AdminDashboard() {
   const [reportSearch, setReportSearch] = useState("");
   const [organizationReportFilter, setOrganizationReportFilter] = useState("All");
   const [organizationReportSearch, setOrganizationReportSearch] = useState("");
+  useEffect(() => {
+    Promise.all([
+      hydrateOpportunities(),
+      hydrateOpportunityReports(),
+      hydrateOrganizationReports(),
+      hydrateDriveRequests(),
+      hydrateVerificationRequests()
+    ]).then(([nextOpportunities, nextOpportunityReports, nextOrganizationReports, nextDriveRequests, nextVerificationRequests]) => {
+      setOpportunities(nextOpportunities);
+      setOpportunityReports(nextOpportunityReports);
+      setOrganizationReports(nextOrganizationReports);
+      setDriveRequests(nextDriveRequests);
+      setVerificationRequests(nextVerificationRequests);
+    }).catch((error) => console.error("Unable to hydrate admin data.", error));
+  }, []);
 
   const verifyOpportunity = (id) => {
     const updated = opportunities.map((item) =>
@@ -452,6 +467,32 @@ function AdminDashboard() {
               </div>
             </div>
             <button type="button" onClick={() => setFilter("Pending")}>Open review queue <span aria-hidden="true">→</span></button>
+          </section>
+        )}
+
+        {(pendingVerificationRequests + pendingDriveRequests + pendingOpportunityReports + pendingOrganizationReports) > 0 && (
+          <section className="admin-reminders" aria-label="Admin reminders">
+            <div className="admin-section-heading">
+              <div>
+                <h2>Reminders</h2>
+                <p>Items waiting for admin action.</p>
+              </div>
+              <span>{pendingVerificationRequests + pendingDriveRequests + pendingOpportunityReports + pendingOrganizationReports} open</span>
+            </div>
+            <div className="admin-reminder-list">
+              {[
+                [pendingVerificationRequests, "Organization verification", "Organization Verification"],
+                [pendingDriveRequests, "College drive requests", "Drive Requests"],
+                [pendingOpportunityReports, "Reported listings", "Reported Listings"],
+                [pendingOrganizationReports, "Organization reports", "Organization Reports"]
+              ].filter(([count]) => count > 0).map(([count, label, nextFilter]) => (
+                <button type="button" className="admin-reminder-item" key={label} onClick={() => setFilter(nextFilter)}>
+                  <span className="admin-reminder-icon" aria-hidden="true">!</span>
+                  <span><strong>{label}</strong><small>{count} awaiting review</small></span>
+                  <span aria-hidden="true">→</span>
+                </button>
+              ))}
+            </div>
           </section>
         )}
 

@@ -1,16 +1,18 @@
  "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "../next-router-compat.jsx";
 import "../App.css";
-import { loadDriveRequests, saveDriveRequests } from "../Data/driveRequests.js";
-import { loadOpportunityReports } from "../Data/opportunityReports.js";
-import { isOpportunityActive, loadOpportunities } from "../Data/opportunities.js";
-import { loadVerificationRequests, saveVerificationRequests } from "../Data/verificationRequests.js";
+import { hydrateDriveRequests, loadDriveRequests, saveDriveRequests } from "../Data/driveRequests.js";
+import { hydrateOpportunityReports, loadOpportunityReports } from "../Data/opportunityReports.js";
+import { hydrateOrganizationReports, saveOrganizationReports } from "../Data/organizationReports.js";
+import { hydrateOpportunities, isOpportunityActive, loadOpportunities } from "../Data/opportunities.js";
+import { hydrateVerificationRequests, loadVerificationRequests, saveVerificationRequests } from "../Data/verificationRequests.js";
 import { MAX_VERIFICATION_DOCUMENTS, MAX_VERIFICATION_DOCUMENT_SIZE, readVerificationDocument } from "../Data/verificationRequests.js";
 import NotificationCenter from "../components/NotificationCenter.jsx";
 import DriveRequestTimeline from "../components/DriveRequestTimeline.jsx";
 import { CollegePortalSidebar } from "../components/CollegePortalLayout.jsx";
+import { api } from "../api/client.js";
 
 const emptyCollegeProfile = {
   name: "",
@@ -36,6 +38,7 @@ function CollegeDashboard() {
   const showingProfile =
     location.hash === "#college-profile" || location.pathname === "/college/college-profile";
   const showingDriveRequests = location.hash === "#drive-requests";
+  const showingCompanyReports = location.hash === "#company-reports";
   const [search, setSearch] = useState("");
   const [industry, setIndustry] = useState("All");
   const [type, setType] = useState("All");
@@ -45,9 +48,49 @@ function CollegeDashboard() {
   const [expectedStudents, setExpectedStudents] = useState("");
   const [driveNote, setDriveNote] = useState("");
   const [driveRequests, setDriveRequests] = useState(loadDriveRequests);
-  const [opportunityReports] = useState(loadOpportunityReports);
+  const [opportunityReports, setOpportunityReports] = useState(loadOpportunityReports);
+  const [organizationReports, setOrganizationReports] = useState([]);
+  const [reportForm, setReportForm] = useState({ organizationName: "", reason: "Unprofessional conduct", details: "" });
+  const [reportFeedback, setReportFeedback] = useState("");
   const [profile, setProfile] = useState(loadCollegeProfile);
   const [requestFeedback, setRequestFeedback] = useState("");
+  const initialProfileRef = useRef(profile);
+
+  useEffect(() => {
+    const initialProfile = initialProfileRef.current;
+    if (!initialProfile.email) return;
+    api.getProfile("college", initialProfile.email)
+      .then((remoteProfile) => {
+        const nextProfile = {
+          ...initialProfile,
+          name: remoteProfile.CollegeName,
+          email: remoteProfile.Email,
+          location: remoteProfile.Location,
+          tier: remoteProfile.CollegeTier,
+          geoLocation: remoteProfile.GeoLocation || "",
+          phone: remoteProfile.Phone || "",
+          website: remoteProfile.Website || "",
+          verificationStatus: remoteProfile.VerificationStatus
+        };
+        setProfile(nextProfile);
+        setProfileForm(nextProfile);
+        localStorage.setItem("collegeProfile", JSON.stringify(nextProfile));
+      })
+      .catch((error) => console.error("Unable to load the college profile.", error));
+  }, []);
+
+  useEffect(() => {
+    Promise.all([hydrateDriveRequests(), hydrateOpportunities(), hydrateVerificationRequests(), hydrateOpportunityReports(), hydrateOrganizationReports()])
+      .then(([requests, opportunities, verifications, reports, organizationReportsData]) => {
+        setDriveRequests(requests);
+        setVerificationRequests(verifications);
+        setOpportunityReports(reports);
+        setOrganizationReports(organizationReportsData);
+        setCollegeName((current) => current || profile.name || "");
+        void opportunities;
+      })
+      .catch((error) => console.error("Unable to hydrate college data.", error));
+  }, [profile.name]);
 
   useEffect(() => {
     setCollegeName(profile.name || "");
@@ -159,6 +202,9 @@ function CollegeDashboard() {
       return report.reportedBy === (profile.name || "College representative");
     })
     .sort((first, second) => (second.reportedAt || "").localeCompare(first.reportedAt || ""));
+  const myOrganizationReports = organizationReports
+    .filter((report) => report.reporterEmail?.toLowerCase() === profile.email?.toLowerCase())
+    .sort((first, second) => (second.reportedAt || "").localeCompare(first.reportedAt || ""));
 
   const filteredCompanies = companiesWithOpportunities.filter((company) => {
     const matchesSearch =
@@ -199,7 +245,33 @@ function CollegeDashboard() {
     setDriveNote("");
   };
 
-  const saveCollegeProfile = (event) => {
+  const submitCompanyReport = (event) => {
+    event.preventDefault();
+    const organizationName = reportForm.organizationName.trim();
+    const details = reportForm.details.trim();
+    if (!organizationName || details.length < 10) {
+      setReportFeedback("Select or enter a company and provide at least 10 characters describing the incident.");
+      return;
+    }
+    const report = {
+      id: Date.now(),
+      accountType: "company",
+      organizationName,
+      reportedBy: profile.name,
+      reporterEmail: profile.email,
+      reason: reportForm.reason,
+      details,
+      status: "pending",
+      reportedAt: new Date().toISOString()
+    };
+    const updatedReports = [...organizationReports, report];
+    saveOrganizationReports(updatedReports);
+    setOrganizationReports(updatedReports);
+    setReportForm({ organizationName: "", reason: "Unprofessional conduct", details: "" });
+    setReportFeedback("Report submitted to the admin team for review.");
+  };
+
+  const saveCollegeProfile = async (event) => {
     event.preventDefault();
     const updatedProfile = {
       name: profileForm.name.trim(),
@@ -211,11 +283,17 @@ function CollegeDashboard() {
       website: profileForm.website.trim(),
       verificationStatus: profile.verificationStatus || "not_submitted"
     };
-    localStorage.setItem("collegeProfile", JSON.stringify(updatedProfile));
-    setProfile(updatedProfile);
-    setProfileForm(updatedProfile);
-    setCollegeName(updatedProfile.name || "");
-    setEditingProfile(false);
+    try {
+      await api.updateProfile("college", profile.email, updatedProfile);
+      localStorage.setItem("collegeProfile", JSON.stringify(updatedProfile));
+      setProfile(updatedProfile);
+      setProfileForm(updatedProfile);
+      setCollegeName(updatedProfile.name || "");
+      setEditingProfile(false);
+    } catch (error) {
+      console.error("Unable to save the college profile.", error);
+      setRequestFeedback(error.message);
+    }
   };
 
   const submitVerificationApplication = (event) => {
@@ -325,7 +403,7 @@ function CollegeDashboard() {
 
       {/* Main Content */}
 
-      <main className={`dashboard-main${showingProfile ? " profile-only" : showingDriveRequests ? " drive-requests-only" : ""}`}>
+      <main className={`dashboard-main${showingProfile ? " profile-only" : showingDriveRequests ? " drive-requests-only" : showingCompanyReports ? " company-reports-only" : ""}`}>
 
         {/* Header */}
 
@@ -912,6 +990,69 @@ function CollegeDashboard() {
               </article>
             ))}
           </div>
+        </section>
+
+        <section className="college-listing-reports-section company-report-section" id="company-reports">
+          <div className="section-top">
+            <div>
+              <h2>Report a Company</h2>
+              <p>Report serious concerns about company conduct to the admin team.</p>
+            </div>
+            <span>{myOrganizationReports.length} submitted</span>
+          </div>
+          <form className="company-report-form" onSubmit={submitCompanyReport}>
+            <label>
+              Company name
+              <input
+                list="college-report-companies"
+                value={reportForm.organizationName}
+                onChange={(event) => setReportForm({ ...reportForm, organizationName: event.target.value })}
+                placeholder="Select or enter the company name"
+                required
+              />
+              <datalist id="college-report-companies">
+                {[...new Set(companies.map((company) => company.name))].map((company) => (
+                  <option key={company} value={company} />
+                ))}
+              </datalist>
+            </label>
+            <label>
+              Reason
+              <select value={reportForm.reason} onChange={(event) => setReportForm({ ...reportForm, reason: event.target.value })}>
+                <option>Unprofessional conduct</option>
+                <option>Harassment or discrimination</option>
+                <option>Misleading recruitment activity</option>
+                <option>Safety concern</option>
+                <option>Other</option>
+              </select>
+            </label>
+            <label className="company-report-wide-field">
+              What happened?
+              <textarea
+                value={reportForm.details}
+                onChange={(event) => setReportForm({ ...reportForm, details: event.target.value })}
+                placeholder="Describe the incident factually, including relevant dates or drive details."
+                minLength={10}
+                rows={5}
+                required
+              />
+            </label>
+            <div className="company-report-actions">
+              <button type="submit" className="request-drive-button">Submit report</button>
+              {reportFeedback && <span role="status">{reportFeedback}</span>}
+            </div>
+          </form>
+          {myOrganizationReports.length > 0 && (
+            <div className="company-report-history">
+              <h3>Your submitted reports</h3>
+              {myOrganizationReports.map((report) => (
+                <article className="company-report-history-item" key={report.id}>
+                  <div><strong>{report.organizationName}</strong><span>{report.reason}</span></div>
+                  <span className={`drive-request-status status-${report.status}`}>{report.status}</span>
+                </article>
+              ))}
+            </div>
+          )}
         </section>
 
         <section className="college-listing-reports-section" id="listing-reports">

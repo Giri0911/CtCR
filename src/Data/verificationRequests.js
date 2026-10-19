@@ -1,4 +1,5 @@
 const STORAGE_KEY = "verificationRequests";
+import { api } from "../api/client.js";
 
 export const MAX_VERIFICATION_DOCUMENTS = 3;
 export const MAX_VERIFICATION_DOCUMENT_SIZE = 300 * 1024;
@@ -31,4 +32,25 @@ export function loadVerificationRequests() {
 
 export function saveVerificationRequests(requests) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(requests));
+  api.saveCollection("verificationRequests", requests).catch((error) =>
+    console.error("Unable to sync verification requests with the database.", error)
+  );
+}
+
+export async function hydrateVerificationRequests() {
+  try {
+    const requests = await api.getCollection("verificationRequests");
+    if (requests.length === 0) {
+      const localRequests = loadVerificationRequests();
+      if (localRequests.length > 0) {
+        await api.saveCollection("verificationRequests", localRequests);
+        return localRequests;
+      }
+    }
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(requests));
+    return requests;
+  } catch (error) {
+    console.error("Unable to load verification requests from the database.", error);
+    return loadVerificationRequests();
+  }
 }

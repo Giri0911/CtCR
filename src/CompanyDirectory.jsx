@@ -1,9 +1,9 @@
  "use client";
 
-import { useState } from "react";
-import { isOpportunityActive, loadOpportunities } from "./Data/opportunities.js";
+import { useEffect, useState } from "react";
+import { hydrateOpportunities, isOpportunityActive, loadOpportunities } from "./Data/opportunities.js";
 import { loadDriveRequests, saveDriveRequests } from "./Data/driveRequests.js";
-import { loadOrganizationReports, saveOrganizationReports } from "./Data/organizationReports.js";
+import { hydrateOrganizationReports, loadOrganizationReports, saveOrganizationReports } from "./Data/organizationReports.js";
 import CollegePortalLayout from "./components/CollegePortalLayout.jsx";
 
 const today = new Date();
@@ -89,11 +89,19 @@ function CompanyDirectory() {
   const [industry, setIndustry] = useState("All Industries");
   const [selectedCompany, setSelectedCompany] = useState(null);
   const [organizationReports, setOrganizationReports] = useState(loadOrganizationReports);
+  const [opportunities, setOpportunities] = useState(loadOpportunities);
+  useEffect(() => {
+    Promise.all([hydrateOpportunities(), hydrateOrganizationReports()])
+      .then(([nextOpportunities, nextReports]) => {
+        setOrganizationReports(nextReports);
+        setOpportunities(nextOpportunities);
+      })
+      .catch((error) => console.error("Unable to hydrate directory data.", error));
+  }, []);
   const [reportFeedback, setReportFeedback] = useState("");
   const [reportingCompanyId, setReportingCompanyId] = useState(null);
   const [driveRequestCompanyId, setDriveRequestCompanyId] = useState(null);
   const [driveRequestFeedback, setDriveRequestFeedback] = useState("");
-  const opportunities = loadOpportunities();
   const reporterName = loadCollegeReporter();
   const hasPendingReport = (companyName) => organizationReports.some((report) =>
     report.organizationName === companyName &&

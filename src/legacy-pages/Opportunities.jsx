@@ -1,25 +1,17 @@
  "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "../next-router-compat.jsx";
-import { isOpportunityActive, isOpportunityExpired, loadOpportunities } from "../Data/opportunities.js";
-import { loadOpportunityReports, saveOpportunityReports } from "../Data/opportunityReports.js";
+import { hydrateOpportunities, isOpportunityActive, isOpportunityExpired } from "../Data/opportunities.js";
+import { hydrateOpportunityReports, saveOpportunityReports } from "../Data/opportunityReports.js";
 import { CollegePortalSidebar } from "../components/CollegePortalLayout.jsx";
 import NotificationCenter from "../components/NotificationCenter.jsx";
+import { api } from "../api/client.js";
 
 const SAVED_OPPORTUNITIES_KEY = "savedOpportunities";
 
 function createReportId() {
   return Date.now();
-}
-
-function loadSavedOpportunityIds() {
-  try {
-    const saved = JSON.parse(localStorage.getItem(SAVED_OPPORTUNITIES_KEY) || "[]");
-    return Array.isArray(saved) ? saved.map(String) : [];
-  } catch {
-    return [];
-  }
 }
 
 function loadReporterProfile() {
@@ -48,7 +40,7 @@ function loadCompanyName() {
 function Opportunities() {
   const [searchParams, setSearchParams] = useSearchParams();
   const returnToCompanyDashboard = searchParams.get("from") === "company";
-  const [opportunities] = useState(loadOpportunities);
+  const [opportunities, setOpportunities] = useState([]);
   const requestedType = searchParams.get("type");
   const type = ["Job", "Internship"].includes(requestedType) ? requestedType : "All";
   const savedOnly = !returnToCompanyDashboard && searchParams.get("saved") === "true";
@@ -59,9 +51,26 @@ function Opportunities() {
   const [sort, setSort] = useState("Newest");
   const [reportingOpportunityId, setReportingOpportunityId] = useState(null);
   const [reportFeedback, setReportFeedback] = useState({});
-  const [reports, setReports] = useState(loadOpportunityReports);
-  const [savedOpportunityIds, setSavedOpportunityIds] = useState(loadSavedOpportunityIds);
+  const [reports, setReports] = useState([]);
+  const [savedOpportunityIds, setSavedOpportunityIds] = useState([]);
   const collegeReporter = loadReporterProfile();
+  useEffect(() => {
+    Promise.all([hydrateOpportunities(), hydrateOpportunityReports()])
+      .then(([nextOpportunities, nextReports]) => {
+        setOpportunities(nextOpportunities);
+        setReports(nextReports);
+      })
+      .catch((error) => console.error("Unable to hydrate opportunities data.", error));
+  }, []);
+  useEffect(() => {
+    if (!collegeReporter.email) return;
+    api.getSavedOpportunities(collegeReporter.email)
+      .then((ids) => {
+        localStorage.setItem(SAVED_OPPORTUNITIES_KEY, JSON.stringify(ids));
+        setSavedOpportunityIds(ids);
+      })
+      .catch((error) => console.error("Unable to load saved opportunities.", error));
+  }, [collegeReporter.email]);
   const isReportFromCurrentCollege = (report) => {
     if (collegeReporter.email && report.reporterEmail) {
       return report.reporterEmail.toLowerCase() === collegeReporter.email;
@@ -84,6 +93,11 @@ function Opportunities() {
       ? savedOpportunityIds.filter((savedId) => savedId !== id)
       : [...savedOpportunityIds, id];
     localStorage.setItem(SAVED_OPPORTUNITIES_KEY, JSON.stringify(nextSavedIds));
+    if (collegeReporter.email) {
+      api.saveSavedOpportunities(collegeReporter.email, nextSavedIds).catch((error) =>
+        console.error("Unable to sync saved opportunities.", error)
+      );
+    }
     setSavedOpportunityIds(nextSavedIds);
   };
 

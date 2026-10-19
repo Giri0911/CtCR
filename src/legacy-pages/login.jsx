@@ -2,26 +2,7 @@
 
 import { useState } from "react";
 import { Link, useNavigate } from "../next-router-compat.jsx";
-
-function findAccountWorkspace(email) {
-  const accountEmail = email.trim().toLowerCase();
-  const profiles = [
-    { key: "collegeProfile", route: "/college" },
-    { key: "companyProfile", route: "/company" }
-  ];
-
-  const matches = profiles.filter(({ key }) => {
-    const savedProfile = localStorage.getItem(key);
-    if (!savedProfile) return false;
-
-    const profile = JSON.parse(savedProfile);
-    return typeof profile.email === "string" &&
-      profile.email.trim().toLowerCase() === accountEmail;
-  });
-
-  if (matches.length > 1) return "ambiguous";
-  return matches[0]?.route || null;
-}
+import { api } from "../api/client.js";
 
 function Login() {
 
@@ -31,25 +12,16 @@ function Login() {
   const [password, setPassword] = useState("");
   const [loginError, setLoginError] = useState("");
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
+    setLoginError("");
 
     try {
-      const workspace = findAccountWorkspace(email);
-      if (workspace === "ambiguous") {
-        setLoginError("This email is linked to more than one account. Use an email unique to your account.");
-        return;
-      }
-
-      if (!workspace) {
-        setLoginError("No account matches this email. Create an account first, then sign in with its email.");
-        return;
-      }
-
-      navigate(workspace);
+      const account = await api.login({ email, password });
+      navigate(account.accountType === "college" ? "/college" : "/company");
     } catch (error) {
       console.error("Unable to look up the sign-in account.", error);
-      setLoginError("We couldn't check this account. Please try again.");
+      setLoginError(error.message);
     }
   };
 
@@ -131,11 +103,6 @@ function Login() {
             </form>
 
             {loginError && <p className="login-error" role="alert">{loginError}</p>}
-
-            <div className="login-demo-note">
-              <span aria-hidden="true">i</span>
-              <p>Your email selects the account workspace. Password verification will be added with authentication.</p>
-            </div>
 
             <p className="login-signup-prompt">
               New to CampusXCompany? <Link to="/register">Create an account</Link>

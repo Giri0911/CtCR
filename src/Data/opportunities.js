@@ -82,6 +82,7 @@ export const defaultOpportunities = [
 ];
 
 const STORAGE_KEY = "opportunities";
+import { api } from "../api/client.js";
 
 export function loadOpportunities() {
   try {
@@ -97,6 +98,22 @@ export function loadOpportunities() {
 
 export function saveOpportunities(opportunities) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(opportunities));
+  api.saveCollection("opportunities", opportunities).catch((error) =>
+    console.error("Unable to sync opportunities with the database.", error)
+  );
+}
+
+export async function hydrateOpportunities() {
+  try {
+    const opportunities = await api.getCollection("opportunities");
+    if (opportunities.length > 0) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(opportunities));
+      return opportunities;
+    }
+  } catch (error) {
+    console.error("Unable to load opportunities from the database.", error);
+  }
+  return loadOpportunities();
 }
 
 export function isOpportunityExpired(opportunity, now = new Date()) {

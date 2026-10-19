@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Link, useNavigate } from "../next-router-compat.jsx";
+import { api } from "../api/client.js";
 
 function Register() {
   const [role, setRole] = useState("college");
@@ -12,26 +13,37 @@ function Register() {
   const [geoLocation, setGeoLocation] = useState("");
   const navigate = useNavigate();
 
-  const handleRegister = (e) => {
-    e.preventDefault();
+  const [registrationError, setRegistrationError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-    if (role === "college") {
-      localStorage.setItem("collegeProfile", JSON.stringify({
+  const handleRegister = async (e) => {
+    e.preventDefault();
+    setRegistrationError("");
+    setIsSubmitting(true);
+
+    try {
+      await api.register({
+        accountType: role,
+        organizationName: name,
+        email,
+        password: e.currentTarget.elements.password.value,
+        location,
+        collegeTier: role === "college" ? tier : null,
+        geoLocation: role === "college" ? geoLocation : null,
+        industry: role === "company" ? "Software & Technology" : null
+      });
+      localStorage.setItem(role === "college" ? "collegeProfile" : "companyProfile", JSON.stringify({
         name,
         email,
         location,
-        tier,
-        geoLocation
+        ...(role === "college" ? { tier, geoLocation } : { industry: "Software & Technology" })
       }));
-      navigate("/college");
-    } else if (role === "company") {
-      localStorage.setItem("companyProfile", JSON.stringify({
-        name,
-        email,
-        location,
-        industry: "Software & Technology"
-      }));
-      navigate("/company");
+      navigate(role === "college" ? "/college" : "/company");
+    } catch (error) {
+      console.error("Unable to create account.", error);
+      setRegistrationError(error.message);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -109,16 +121,18 @@ function Register() {
 
           <input
             type="password"
+            name="password"
             placeholder="Create password"
             required
           />
 
-          <button type="submit">
-            Create Account
+          <button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? "Creating account..." : "Create Account"}
           </button>
 
         </form>
 
+        {registrationError && <p className="login-error" role="alert">{registrationError}</p>}
         <p>
           Already have an account?{" "}
           <Link to="/login">Login</Link>

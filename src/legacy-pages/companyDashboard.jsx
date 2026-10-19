@@ -1,14 +1,16 @@
  "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "../next-router-compat.jsx";
-import { isOpportunityExpired, loadOpportunities, saveOpportunities } from "../Data/opportunities.js";
-import { loadDriveRequests, saveDriveRequests } from "../Data/driveRequests.js";
-import { loadVerificationRequests, saveVerificationRequests } from "../Data/verificationRequests.js";
+import { hydrateOpportunities, isOpportunityExpired, loadOpportunities, saveOpportunities } from "../Data/opportunities.js";
+import { hydrateDriveRequests, loadDriveRequests, saveDriveRequests } from "../Data/driveRequests.js";
+import { hydrateVerificationRequests, loadVerificationRequests, saveVerificationRequests } from "../Data/verificationRequests.js";
+import { hydrateOrganizationReports, loadOrganizationReports, saveOrganizationReports } from "../Data/organizationReports.js";
 import { MAX_VERIFICATION_DOCUMENTS, MAX_VERIFICATION_DOCUMENT_SIZE, readVerificationDocument } from "../Data/verificationRequests.js";
 import NotificationCenter from "../components/NotificationCenter.jsx";
 import DriveRequestTimeline from "../components/DriveRequestTimeline.jsx";
 import OpportunityEditor from "../components/OpportunityEditor.jsx";
+import { api } from "../api/client.js";
 
 const companyName = "TechNova Technologies";
 const defaultCompanyProfile = {
@@ -67,11 +69,13 @@ function CompanyDashboard() {
   const navigate = useNavigate();
   const showingProfile = location.hash === "#company-profile";
   const showingDriveRequests = location.hash === "#drive-requests";
+  const showingCollegeReports = location.hash === "#college-reports";
   const showingJobs = location.hash === "#job-vacancies";
   const showingInternships = location.hash === "#internships";
   const showingDashboard = ![
     "#company-profile",
     "#drive-requests",
+    "#college-reports",
     "#job-vacancies",
     "#internships"
   ].includes(location.hash);
@@ -113,6 +117,7 @@ function CompanyDashboard() {
       "#create-listing": "create-listing",
       "#company-profile": "company-profile",
       "#drive-requests": "drive-requests",
+      "#college-reports": "college-reports",
       "#job-vacancies": "job-vacancies",
       "#internships": "internships"
     }[location.hash];
@@ -126,6 +131,9 @@ function CompanyDashboard() {
   const [companyProfileForm, setCompanyProfileForm] = useState(loadCompanyProfile);
   const [editingCompanyProfile, setEditingCompanyProfile] = useState(() => !loadCompanyProfile().email);
   const [verificationRequests, setVerificationRequests] = useState(loadVerificationRequests);
+  const [organizationReports, setOrganizationReports] = useState(loadOrganizationReports);
+  const [reportForm, setReportForm] = useState({ organizationName: "", reason: "Unprofessional conduct", details: "" });
+  const [reportFeedback, setReportFeedback] = useState("");
   const [showVerificationForm, setShowVerificationForm] = useState(false);
   const [verificationForm, setVerificationForm] = useState({ registrationNumber: "", website: "", note: "", documents: [], error: "" });
   const latestVerificationRequest = [...verificationRequests]
@@ -145,6 +153,41 @@ function CompanyDashboard() {
 
   const [jobs, setJobs] = useState(() => getCompanyItems("Job", companyProfile.name));
   const [internships, setInternships] = useState(() => getCompanyItems("Internship", companyProfile.name));
+  const initialCompanyProfileRef = useRef(companyProfile);
+  useEffect(() => {
+    const initialCompanyProfile = initialCompanyProfileRef.current;
+    if (!initialCompanyProfile.email) return;
+    api.getProfile("company", initialCompanyProfile.email)
+      .then((remoteProfile) => {
+        const nextProfile = {
+          ...initialCompanyProfile,
+          name: remoteProfile.CompanyName,
+          email: remoteProfile.Email,
+          location: remoteProfile.Location,
+          industry: remoteProfile.Industry,
+          phone: remoteProfile.Phone || "",
+          website: remoteProfile.Website || "",
+          verificationStatus: remoteProfile.VerificationStatus
+        };
+        setCompanyProfile(nextProfile);
+        setCompanyProfileForm(nextProfile);
+        localStorage.setItem("companyProfile", JSON.stringify(nextProfile));
+      })
+      .catch((error) => console.error("Unable to load the company profile.", error));
+  }, []);
+  useEffect(() => {
+    Promise.all([hydrateOpportunities(), hydrateDriveRequests(), hydrateVerificationRequests(), hydrateOrganizationReports()])
+      .then(([opportunities, requests, verifications, reports]) => {
+        setJobs(opportunities.filter((item) => item.company === companyProfile.name && item.type === "Job"));
+        setInternships(opportunities.filter((item) => item.company === companyProfile.name && item.type === "Internship"));
+        setDriveRequests(requests.filter((request) =>
+          request.company === companyProfile.name && (request.adminStatus || "approved") === "approved"
+        ));
+        setVerificationRequests(verifications);
+        setOrganizationReports(reports);
+      })
+      .catch((error) => console.error("Unable to hydrate company data.", error));
+  }, [companyProfile.name]);
   const [driveRequests, setDriveRequests] = useState(() =>
     loadDriveRequests().filter((request) =>
       request.company === companyProfile.name && (request.adminStatus || "approved") === "approved"
@@ -395,7 +438,33 @@ function CompanyDashboard() {
     ));
   };
 
-  const saveCompanyProfile = (event) => {
+  const submitCollegeReport = (event) => {
+    event.preventDefault();
+    const organizationName = reportForm.organizationName.trim();
+    const details = reportForm.details.trim();
+    if (!organizationName || details.length < 10) {
+      setReportFeedback("Select or enter a college and provide at least 10 characters describing the incident.");
+      return;
+    }
+    const report = {
+      id: Date.now(),
+      accountType: "college",
+      organizationName,
+      reportedBy: companyProfile.name,
+      reporterEmail: companyProfile.email,
+      reason: reportForm.reason,
+      details,
+      status: "pending",
+      reportedAt: new Date().toISOString()
+    };
+    const updatedReports = [...organizationReports, report];
+    saveOrganizationReports(updatedReports);
+    setOrganizationReports(updatedReports);
+    setReportForm({ organizationName: "", reason: "Unprofessional conduct", details: "" });
+    setReportFeedback("Report submitted to the admin team for review.");
+  };
+
+  const saveCompanyProfile = async (event) => {
     event.preventDefault();
     const updatedProfile = {
       ...companyProfile,
@@ -406,10 +475,16 @@ function CompanyDashboard() {
       website: companyProfileForm.website?.trim() ?? "",
       verificationStatus: companyProfile.verificationStatus || "not_submitted"
     };
-    localStorage.setItem("companyProfile", JSON.stringify(updatedProfile));
-    setCompanyProfile(updatedProfile);
-    setCompanyProfileForm(updatedProfile);
-    setEditingCompanyProfile(false);
+    try {
+      await api.updateProfile("company", companyProfile.email, updatedProfile);
+      localStorage.setItem("companyProfile", JSON.stringify(updatedProfile));
+      setCompanyProfile(updatedProfile);
+      setCompanyProfileForm(updatedProfile);
+      setEditingCompanyProfile(false);
+    } catch (error) {
+      console.error("Unable to save the company profile.", error);
+      setOpportunityFeedback(error.message);
+    }
   };
 
   const submitVerificationApplication = (event) => {
@@ -543,6 +618,9 @@ function CompanyDashboard() {
           <Link className={showingDriveRequests ? "company-active-menu" : ""} to="/company#drive-requests">
             Drive Requests
           </Link>
+          <Link className={showingCollegeReports ? "company-active-menu" : ""} to="/company#college-reports">
+            Report a College
+          </Link>
 
           <p className="company-menu-title">ACCOUNT</p>
 
@@ -564,6 +642,7 @@ function CompanyDashboard() {
           "company-dashboard-main",
           showingProfile && "profile-only",
           showingDriveRequests && "drive-requests-only",
+          showingCollegeReports && "college-reports-only",
           showingJobs && "jobs-only",
           showingInternships && "internships-only"
         ].filter(Boolean).join(" ")}
@@ -935,6 +1014,79 @@ function CompanyDashboard() {
               </article>
             ))}
           </div>
+        </section>
+
+        <section className="company-opportunities-section company-report-section" id="college-reports">
+          <div className="company-section-heading">
+            <div>
+              <h2>Report a College</h2>
+              <p>Report serious concerns about college conduct to the admin team.</p>
+            </div>
+            <span className="drive-request-count">{organizationReports.filter((report) => report.reporterEmail === companyProfile.email).length} submitted</span>
+          </div>
+
+          <form className="company-report-form" onSubmit={submitCollegeReport}>
+            <label>
+              College name
+              <input
+                list="company-report-colleges"
+                value={reportForm.organizationName}
+                onChange={(event) => setReportForm({ ...reportForm, organizationName: event.target.value })}
+                placeholder="Select or enter the college name"
+                required
+              />
+              <datalist id="company-report-colleges">
+                {[...new Set(driveRequests.map((request) => request.college).filter(Boolean))].map((college) => (
+                  <option key={college} value={college} />
+                ))}
+              </datalist>
+            </label>
+            <label>
+              Reason
+              <select
+                value={reportForm.reason}
+                onChange={(event) => setReportForm({ ...reportForm, reason: event.target.value })}
+              >
+                <option>Unprofessional conduct</option>
+                <option>Harassment or discrimination</option>
+                <option>Misleading recruitment activity</option>
+                <option>Safety concern</option>
+                <option>Other</option>
+              </select>
+            </label>
+            <label className="company-report-wide-field">
+              What happened?
+              <textarea
+                value={reportForm.details}
+                onChange={(event) => setReportForm({ ...reportForm, details: event.target.value })}
+                placeholder="Describe the incident factually, including relevant dates or drive details."
+                minLength={10}
+                rows={5}
+                required
+              />
+            </label>
+            <div className="company-report-actions">
+              <button type="submit" className="accept-drive-request">Submit report</button>
+              {reportFeedback && <span role="status">{reportFeedback}</span>}
+            </div>
+          </form>
+
+          {organizationReports.filter((report) => report.reporterEmail === companyProfile.email).length > 0 && (
+            <div className="company-report-history">
+              <h3>Your submitted reports</h3>
+              {organizationReports
+                .filter((report) => report.reporterEmail === companyProfile.email)
+                .map((report) => (
+                  <article className="company-report-history-item" key={report.id}>
+                    <div>
+                      <strong>{report.organizationName}</strong>
+                      <span>{report.reason}</span>
+                    </div>
+                    <span className={`drive-request-status status-${report.status}`}>{report.status}</span>
+                  </article>
+                ))}
+            </div>
+          )}
         </section>
 
         {/* Job Form */}

@@ -1060,11 +1060,278 @@ textarea:focus {
   flex: 0 0 auto;
 }
 
+.company-report-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 16px;
+  margin-top: 18px;
+  padding: 18px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface-muted);
+}
+
+.company-report-form label {
+  display: grid;
+  min-width: 0;
+  max-width: 100%;
+  gap: 7px;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.company-report-form input,
+.company-report-form select,
+.company-report-form textarea {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  padding: 11px 12px;
+  color: var(--text);
+  background: var(--surface);
+  font: inherit;
+}
+
+.company-report-form textarea {
+  min-height: 118px;
+  resize: vertical;
+}
+
+.company-report-form input:focus,
+.company-report-form select:focus,
+.company-report-form textarea:focus {
+  border-color: var(--green);
+  outline: 3px solid rgba(15, 143, 157, 0.14);
+}
+
+.company-report-wide-field {
+  grid-column: 1 / -1;
+}
+
+.company-report-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  min-width: 0;
+  max-width: 100%;
+  gap: 14px;
+  grid-column: 1 / -1;
+}
+
+.company-report-actions [role="status"] {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.company-report-history {
+  display: grid;
+  gap: 10px;
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+
+.company-report-history h3 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.company-report-history-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  min-width: 0;
+  max-width: 100%;
+  padding: 13px 15px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.company-report-history-item div {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+.company-report-section {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.company-report-section > .section-top,
+.company-report-section > .company-section-heading {
+  min-width: 0;
+}
+
+/* Keep the two portal dashboards on the same text rhythm. */
+.college-dashboard .dashboard-main,
+.company-dashboard .company-dashboard-main {
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.college-dashboard .dashboard-header,
+.company-dashboard .company-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 18px;
+}
+
+.college-dashboard .dashboard-header > :first-child,
+.company-dashboard .company-header > :first-child {
+  min-width: 0;
+}
+
+.college-dashboard .dashboard-header h1,
+.company-dashboard .company-header h1 {
+  margin: 0;
+  color: var(--ink);
+  font-size: clamp(24px, 2.4vw, 30px);
+  line-height: 1.15;
+}
+
+.college-dashboard .welcome-text,
+.company-dashboard .company-header > div:first-child > p {
+  margin: 0 0 5px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  line-height: 1.25;
+}
+
+.college-dashboard .section-top,
+.company-dashboard .company-section-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 18px;
+}
+
+.college-dashboard .section-top > div,
+.company-dashboard .company-section-heading > div {
+  min-width: 0;
+}
+
+.college-dashboard .section-top h2,
+.company-dashboard .company-section-heading h2 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 20px;
+  line-height: 1.25;
+}
+
+.college-dashboard .section-top p,
+.company-dashboard .company-section-heading p {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.college-dashboard .section-top > span,
+.company-dashboard .company-section-heading > span {
+  flex: 0 0 auto;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.college-dashboard .company-report-form label,
+.company-dashboard .company-report-form label {
+  line-height: 1.3;
+}
+
+.college-dashboard .company-report-form input,
+.college-dashboard .company-report-form select,
+.company-dashboard .company-report-form input,
+.company-dashboard .company-report-form select {
+  min-height: 42px;
+  line-height: 1.3;
+}
+
+.college-dashboard .company-report-form textarea,
+.company-dashboard .company-report-form textarea {
+  line-height: 1.45;
+}
+
+.company-report-history-item span:not(.drive-request-status) {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.admin-reminders {
+  margin-bottom: 20px;
+  padding: 20px;
+  border: 1px solid #f2d08b;
+  border-radius: 14px;
+  background: #fffaf0;
+}
+
+.admin-reminders .admin-section-heading {
+  margin-bottom: 14px;
+}
+
+.admin-reminder-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.admin-reminder-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid #f2d08b;
+  border-radius: 10px;
+  padding: 12px;
+  color: inherit;
+  background: #fff;
+  text-align: left;
+  cursor: pointer;
+}
+
+.admin-reminder-item > span:nth-child(2) {
+  display: grid;
+  flex: 1;
+  gap: 3px;
+}
+
+.admin-reminder-item small {
+  color: var(--text-muted);
+}
+
+.admin-reminder-icon {
+  display: grid;
+  width: 25px;
+  height: 25px;
+  place-items: center;
+  border-radius: 50%;
+  color: #7a4d00;
+  background: #ffe2a5;
+  font-weight: 800;
+}
+
 .notification-trigger {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
+  min-width: max-content;
+  line-height: 1;
   min-height: 42px;
   padding: 7px 11px;
   border: 1px solid var(--line);
@@ -1082,8 +1349,20 @@ textarea:focus {
 }
 
 .notification-bell {
+  flex: 0 0 auto;
   color: var(--green);
   font-size: 16px;
+  line-height: 1;
+}
+
+.notification-trigger > span:not(.notification-bell):not(.notification-count) {
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.notification-count {
+  flex: 0 0 auto;
+  line-height: 1;
 }
 
 .notification-count {
@@ -1271,6 +1550,8 @@ textarea:focus {
 @media (max-width: 750px) {
   .drive-request-timeline {
     grid-template-columns: 1fr;
+    width: 100%;
+    max-width: 100%;
   }
 
   .notification-popover {
@@ -2465,8 +2746,9 @@ body {
 }
 
 .admin-dashboard .admin-main {
+  grid-column: 2;
   width: auto;
-  margin-left: 252px;
+  margin-left: 0;
   padding-right: clamp(18px, 2.5vw, 36px);
   padding-left: clamp(18px, 2.5vw, 36px);
 }
@@ -3077,6 +3359,27 @@ body {
     gap: 10px;
   }
 
+  .college-dashboard .dashboard-header,
+  .company-dashboard .company-header {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 12px;
+  }
+
+  .college-dashboard .college-user,
+  .company-dashboard .company-user {
+    grid-column: 1 / -1;
+  }
+
+  .college-dashboard .section-top,
+  .company-dashboard .company-section-heading {
+    gap: 8px;
+  }
+
+  .college-dashboard .section-top > span,
+  .company-dashboard .company-section-heading > span {
+    white-space: normal;
+  }
+
   .opportunity-table {
     overflow-x: auto;
   }
@@ -3096,8 +3399,31 @@ body {
   .college-profile-form > *,
   .company-profile-edit-form > *,
   .verification-application-form > *,
-  .drive-request-fields > * {
+  .drive-request-fields > *,
+  .company-report-form > * {
     grid-column: 1;
+  }
+
+  .company-report-form {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin-top: 14px;
+    padding: 14px;
+    border-radius: 12px;
+  }
+
+  .company-report-actions {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .company-report-actions button {
+    width: 100%;
+  }
+
+  .admin-reminder-list {
+    grid-template-columns: 1fr;
   }
 
   .company-profile-card {
@@ -3152,5 +3478,121 @@ body {
 
   .notification-popover {
     width: calc(100vw - 24px);
+  }
+}
+
+/* Keep the mobile shell usable without hiding actions or notification content. */
+.notification-popover {
+  z-index: 1000;
+  top: 12px;
+  right: 12px;
+  max-width: calc(100vw - 24px);
+}
+
+.notification-item-content p {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 700px) {
+  .home-page {
+    padding-right: 16px;
+    padding-left: 16px;
+  }
+
+  .home-header {
+    align-items: center;
+    gap: 12px;
+  }
+
+  .home-nav {
+    min-width: 0;
+  }
+
+  .home-nav a {
+    white-space: nowrap;
+  }
+
+  .home-hero {
+    min-height: 0;
+    padding-top: 42px;
+    padding-bottom: 48px;
+  }
+
+  .home-copy h1 {
+    max-width: none;
+    font-size: clamp(36px, 10vw, 52px);
+  }
+
+  .home-visual {
+    min-width: 0;
+    padding-left: 0;
+  }
+
+  .dashboard-header,
+  .company-header,
+  .admin-dashboard .admin-header {
+    width: 100%;
+  }
+
+  .notification-popover-heading {
+    gap: 8px;
+  }
+
+  .notification-heading-actions {
+    flex: 0 0 auto;
+  }
+
+  .notification-mark-read {
+    max-width: 112px;
+    text-align: right;
+  }
+
+  .notification-item {
+    grid-template-columns: 8px minmax(0, 1fr);
+  }
+
+  .notification-item-actions {
+    grid-column: 2;
+    justify-content: flex-end;
+    margin-top: 2px;
+  }
+
+  .notification-item-actions a,
+  .notification-item-actions button {
+    min-height: 32px;
+  }
+
+  .table-wrapper,
+  .opportunity-table,
+  .company-table {
+    max-width: 100%;
+    overflow-x: auto;
+  }
+}
+
+@media (max-width: 420px) {
+  .home-header {
+    align-items: flex-start;
+    flex-direction: column;
+    padding-top: 14px;
+    padding-bottom: 14px;
+  }
+
+  .home-nav {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .notification-popover-heading {
+    align-items: flex-start;
+  }
+
+  .notification-popover-heading h2 {
+    font-size: 15px;
+  }
+
+  .notification-mark-read {
+    max-width: 90px;
+    line-height: 1.25;
   }
 }

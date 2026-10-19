@@ -21,6 +21,7 @@ export function CollegePortalSidebar() {
   const isDirectory = location.pathname === "/college/companies";
   const isDriveRequests = location.pathname === "/college" && location.hash === "#drive-requests";
   const isListingReports = location.pathname === "/college" && location.hash === "#listing-reports";
+  const isCompanyReports = location.pathname === "/college" && location.hash === "#company-reports";
   const isProfile = location.pathname === "/college/college-profile" || location.hash === "#college-profile";
   const isSaved = searchParams.get("saved") === "true";
   const opportunityType = searchParams.get("type");
@@ -43,6 +44,7 @@ export function CollegePortalSidebar() {
         <Link className={isSaved ? "active-menu" : ""} to="/opportunities?saved=true">Saved Opportunities</Link>
         <Link className={isDriveRequests ? "active-menu" : ""} to="/college#drive-requests">Drive Requests</Link>
         <Link className={isListingReports ? "active-menu" : ""} to="/college#listing-reports">My Listing Reports</Link>
+        <Link className={isCompanyReports ? "active-menu" : ""} to="/college#company-reports">Report a Company</Link>
         <p className="menu-title">ACCOUNT</p>
         <Link className={isProfile ? "active-menu" : ""} to="/college/college-profile">College Profile</Link>
         <Link to="/">Logout</Link>

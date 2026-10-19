@@ -2,13 +2,17 @@
 
 import { useState } from "react";
 import { useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { Link } from "../next-router-compat.jsx";
+import { api } from "../api/client.js";
 
 function NotificationCenter({ notifications, label = "Notifications", scope = "default" }) {
   const [open, setOpen] = useState(false);
   const [readIds, setReadIds] = useState(() => new Set());
   const [dismissedIds, setDismissedIds] = useState(() => new Set());
+  const [isHydrated, setIsHydrated] = useState(false);
   const centerRef = useRef(null);
+  const popoverRef = useRef(null);
   const triggerRef = useRef(null);
   const [popoverPosition, setPopoverPosition] = useState(null);
   const storagePrefix = `campusxcompany.${scope}`;
@@ -22,6 +26,7 @@ function NotificationCenter({ notifications, label = "Notifications", scope = "d
   const unreadCount = visibleNotifications.filter((notification) =>
     !readIds.has(notificationIds[safeNotifications.indexOf(notification)])
   ).length;
+  const displayedUnreadCount = isHydrated ? unreadCount : 0;
 
   useEffect(() => {
     const restorePreferences = () => {
@@ -35,7 +40,11 @@ function NotificationCenter({ notifications, label = "Notifications", scope = "d
       }
     };
     const restoreTimer = window.setTimeout(restorePreferences, 0);
-    return () => window.clearTimeout(restoreTimer);
+    const hydrationTimer = window.setTimeout(() => setIsHydrated(true), 0);
+    return () => {
+      window.clearTimeout(restoreTimer);
+      window.clearTimeout(hydrationTimer);
+    };
   }, [storagePrefix]);
 
   useEffect(() => {
@@ -55,7 +64,9 @@ function NotificationCenter({ notifications, label = "Notifications", scope = "d
       });
     };
     const handlePointerDown = (event) => {
-      if (!centerRef.current?.contains(event.target)) setOpen(false);
+      const clickedTrigger = centerRef.current?.contains(event.target);
+      const clickedPopover = popoverRef.current?.contains(event.target);
+      if (!clickedTrigger && !clickedPopover) setOpen(false);
     };
     const handleKeyDown = (event) => {
       if (event.key === "Escape") setOpen(false);
@@ -65,6 +76,7 @@ function NotificationCenter({ notifications, label = "Notifications", scope = "d
     document.addEventListener("keydown", handleKeyDown);
     window.addEventListener("resize", updatePopoverPosition);
     window.addEventListener("scroll", updatePopoverPosition, true);
+    updatePopoverPosition();
     const positionFrame = window.requestAnimationFrame(updatePopoverPosition);
     return () => {
       document.removeEventListener("mousedown", handlePointerDown);
@@ -81,6 +93,13 @@ function NotificationCenter({ notifications, label = "Notifications", scope = "d
     } catch (error) {
       console.error("Unable to save notification preferences.", error);
     }
+    const read = key.endsWith(".readNotifications") ? [...ids] : [...readIds];
+    const dismissed = key.endsWith(".dismissedNotifications") ? [...ids] : [...dismissedIds];
+    api.saveNotificationPreferences(scope, {
+      email: typeof sessionStorage !== "undefined" ? sessionStorage.getItem("campusxcompany.email") : null,
+      readIds: read,
+      dismissedIds: dismissed
+    }).catch((error) => console.error("Unable to sync notification preferences.", error));
   };
 
   const markAllRead = () => {
@@ -117,18 +136,19 @@ function NotificationCenter({ notifications, label = "Notifications", scope = "d
         className="notification-trigger"
         ref={triggerRef}
         type="button"
-        aria-label={`${label}${unreadCount ? `, ${unreadCount} updates` : ""}`}
+        aria-label={`${label}${displayedUnreadCount ? `, ${displayedUnreadCount} updates` : ""}`}
         aria-expanded={open}
         onClick={() => setOpen((current) => !current)}
       >
         <span aria-hidden="true" className="notification-bell">🔔</span>
         <span>{label}</span>
-        {unreadCount > 0 && <span className="notification-count">{unreadCount}</span>}
+        {displayedUnreadCount > 0 && <span className="notification-count">{displayedUnreadCount}</span>}
       </button>
 
-      {open && (
+      {open && createPortal(
         <section
           className="notification-popover"
+          ref={popoverRef}
           aria-label={label}
           style={popoverPosition || undefined}
         >
@@ -187,7 +207,8 @@ function NotificationCenter({ notifications, label = "Notifications", scope = "d
               })}
             </div>
           )}
-        </section>
+        </section>,
+        document.body
       )}
     </div>
   );
